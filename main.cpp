@@ -2,6 +2,7 @@
 #include <fstream>
 #include <glad/glad.h>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,26 @@ GLuint gVertexArrayObject = 0;
 GLuint gVertexBufferObject = 0;
 GLuint gIndexBufferObject = 0;
 GLuint gGraphicsPipelineShaderProgram = 0;
+
+static void GLClearAllErrors() {
+  while (glGetError() != GL_NO_ERROR) {
+  }
+}
+
+static bool GLCheckErrorStatus(const char *function, int line) {
+  while (GLenum error = glGetError()) {
+    // Check the hexcode of error number on https://wikis.khronos.org/opengl/OpenGL_Error
+    std::cout << "OpenGL Error:" << error << "\tLine:" << line
+              << "\tFunction:" << function << std::endl;
+    return true;
+  }
+  return false;
+}
+
+#define GLCheck(x)                                                             \
+  GLClearAllErrors();                                                          \
+  x;                                                                           \
+  GLCheckErrorStatus(#x, __LINE__);
 
 std::string loadShaderAsString(const std::string &filename) {
   std::string result = "";
@@ -167,8 +188,8 @@ void preDraw() {
 }
 void draw() {
   glBindVertexArray(gVertexArrayObject);
-  glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  GLCheck(glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject));
+  GLCheck(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 }
 
 void mainLoop() {
