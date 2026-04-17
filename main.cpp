@@ -12,6 +12,7 @@ SDL_GLContext gOpenGLContext = nullptr;
 bool gQuit = false;
 GLuint gVertexArrayObject = 0;
 GLuint gVertexBufferObject = 0;
+GLuint gIndexBufferObject = 0;
 GLuint gGraphicsPipelineShaderProgram = 0;
 
 std::string loadShaderAsString(const std::string &filename) {
@@ -70,29 +71,30 @@ void initializeProgram() {
 
 void vertexSpecification() {
   const std::vector<GLfloat> vertexData{
-      // triangle 1
       -0.5f, -0.5f, 0.0f, // vertex 1
-      1.0f, 0.0f, 0.0f,   // color of vertex 1
-      0.5f, -0.5f, 0.0f,  // vertex 2
-      0.0f, 1.0f, 0.0f,   // color of vertex 2
-      -0.5f, 0.5f, 0.0f,  // vertex 3
-      0.0f, 0.0f, 1.0f,   // color of vertex 3
-
-      // triangle 2
-      0.5f, -0.5f, 0.0f, // vertex 1
-      0.0f, 1.0f, 0.0f,  // color of vertex 1
-      0.5f, 0.5f, 0.0f, // vertex 2
-      0.0f, 1.0f, 0.0f,  // color of vertex 2
-      -0.5f, 0.5f, 0.0f, // vertex 3
-      0.0f, 0.0f, 1.0f,  // color of vertex 3
+      1.0f,  0.0f,  0.0f, // color of vertex 1
+      0.5f,  -0.5f, 0.0f, // vertex 2
+      0.0f,  1.0f,  0.0f, // color of vertex 2
+      -0.5f, 0.5f,  0.0f, // vertex 3
+      0.0f,  0.0f,  1.0f, // color of vertex 3
+      0.5f,  0.5f,  0.0f, // vertex 4
+      0.0f,  1.0f,  0.0f, // color of vertex 4
   };
 
+  const std::vector<GLuint> indexBufferData{2, 0, 1, 3, 2, 1};
   glGenVertexArrays(1, &gVertexArrayObject);
   glBindVertexArray(gVertexArrayObject);
   glGenBuffers(1, &gVertexBufferObject);
   glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject);
   glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(GLfloat),
                vertexData.data(), GL_STATIC_DRAW);
+
+  // index buffer object
+  glGenBuffers(1, &gIndexBufferObject);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBufferObject);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferData.size() * sizeof(GLuint),
+               indexBufferData.data(), GL_STATIC_DRAW);
+
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT) * 6,
                         (void *)0);
@@ -166,7 +168,7 @@ void preDraw() {
 void draw() {
   glBindVertexArray(gVertexArrayObject);
   glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void mainLoop() {
