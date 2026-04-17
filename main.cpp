@@ -70,13 +70,21 @@ void initializeProgram() {
 
 void vertexSpecification() {
   const std::vector<GLfloat> vertexData{
-      -0.8f, -0.8f, 0.0f, // vertex 1
-      1.0f,  0.0f,  0.0f, // color of vertex 1
-      0.8f,  -0.8f, 0.0f, // vertex 2
-      0.0f,  1.0f,  0.0f, // color of vertex 2
-      0.0f,  0.8f,  0.0f, // vertex 3
-      0.0f,  0.0f,  1.0f, // color of vertex 3
+      // triangle 1
+      -0.5f, -0.5f, 0.0f, // vertex 1
+      1.0f, 0.0f, 0.0f,   // color of vertex 1
+      0.5f, -0.5f, 0.0f,  // vertex 2
+      0.0f, 1.0f, 0.0f,   // color of vertex 2
+      -0.5f, 0.5f, 0.0f,  // vertex 3
+      0.0f, 0.0f, 1.0f,   // color of vertex 3
 
+      // triangle 2
+      0.5f, -0.5f, 0.0f, // vertex 1
+      0.0f, 1.0f, 0.0f,  // color of vertex 1
+      0.5f, 0.5f, 0.0f, // vertex 2
+      0.0f, 1.0f, 0.0f,  // color of vertex 2
+      -0.5f, 0.5f, 0.0f, // vertex 3
+      0.0f, 0.0f, 1.0f,  // color of vertex 3
   };
 
   glGenVertexArrays(1, &gVertexArrayObject);
@@ -158,7 +166,7 @@ void preDraw() {
 void draw() {
   glBindVertexArray(gVertexArrayObject);
   glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void mainLoop() {
