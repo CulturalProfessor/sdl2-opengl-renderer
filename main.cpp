@@ -1,6 +1,10 @@
 #include <SDL2/SDL.h>
+#include <SDL_keyboard.h>
+#include <SDL_scancode.h>
+#include <SDL_stdinc.h>
 #include <fstream>
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <ostream>
 #include <string>
@@ -15,6 +19,7 @@ GLuint gVertexArrayObject = 0;
 GLuint gVertexBufferObject = 0;
 GLuint gIndexBufferObject = 0;
 GLuint gGraphicsPipelineShaderProgram = 0;
+float g_Uoffset = 0.0f;
 
 static void GLClearAllErrors() {
   while (glGetError() != GL_NO_ERROR) {
@@ -23,7 +28,8 @@ static void GLClearAllErrors() {
 
 static bool GLCheckErrorStatus(const char *function, int line) {
   while (GLenum error = glGetError()) {
-    // Check the hexcode of error number on https://wikis.khronos.org/opengl/OpenGL_Error
+    // Check the hexcode of error number on
+    // https://wikis.khronos.org/opengl/OpenGL_Error
     std::cout << "OpenGL Error:" << error << "\tLine:" << line
               << "\tFunction:" << function << std::endl;
     return true;
@@ -176,7 +182,18 @@ void input() {
       gQuit = true;
     }
   }
+
+  const Uint8 *state = SDL_GetKeyboardState(NULL);
+  if (state[SDL_SCANCODE_UP]) {
+    g_Uoffset += 0.001f;
+    std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
+  }
+  if (state[SDL_SCANCODE_DOWN]) {
+    g_Uoffset -= 0.001f;
+    std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
+  }
 }
+
 void preDraw() {
   glDisable(GL_DEPTH_TEST);
   glDisable(GL_CULL_FACE);
@@ -185,7 +202,16 @@ void preDraw() {
   glClearColor(1.f, 1.f, 0.f, 1.f);
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
   glUseProgram(gGraphicsPipelineShaderProgram);
+
+  GLint location =
+      glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_Offset");
+  if (location >= 0) {
+    glUniform1f(location,g_Uoffset); 
+  } else {
+    std::cout << "couldn't find location of u_Offset\n" << std::endl;
+  }
 }
+
 void draw() {
   glBindVertexArray(gVertexArrayObject);
   GLCheck(glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject));
