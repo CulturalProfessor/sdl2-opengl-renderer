@@ -1,10 +1,15 @@
+#include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/vector_float3.hpp"
 #include <SDL2/SDL.h>
 #include <SDL_keyboard.h>
 #include <SDL_scancode.h>
 #include <SDL_stdinc.h>
+#include <cstdlib>
 #include <fstream>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <ostream>
 #include <string>
@@ -203,12 +208,17 @@ void preDraw() {
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
   glUseProgram(gGraphicsPipelineShaderProgram);
 
-  GLint location =
-      glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_Offset");
-  if (location >= 0) {
-    glUniform1f(location,g_Uoffset); 
+  glm::mat4 translate =
+      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, g_Uoffset, 0.0f));
+
+  GLint u_ModelMatrixLocation =
+      glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ModelMatrix");
+
+  if (u_ModelMatrixLocation >= 0) {
+    glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &translate[0][0]);
   } else {
-    std::cout << "couldn't find location of u_Offset\n" << std::endl;
+    std::cout << "couldn't find location of u_ModelMatrix\n" << std::endl;
+    exit(EXIT_FAILURE);
   }
 }
 
