@@ -1,6 +1,8 @@
+#include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float3.hpp"
+#include "glm/trigonometric.hpp"
 #include <SDL2/SDL.h>
 #include <SDL_keyboard.h>
 #include <SDL_scancode.h>
@@ -209,7 +211,11 @@ void preDraw() {
   glUseProgram(gGraphicsPipelineShaderProgram);
 
   glm::mat4 translate =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, g_Uoffset, 0.0f));
+      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_Uoffset));
+
+  glm::mat4 perspective =
+      glm::perspective(glm::radians(45.0f),
+                       (float)gScreenWidth / (float)gScreenHeight, 0.1f, 10.0f);
 
   GLint u_ModelMatrixLocation =
       glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ModelMatrix");
@@ -218,6 +224,16 @@ void preDraw() {
     glUniformMatrix4fv(u_ModelMatrixLocation, 1, GL_FALSE, &translate[0][0]);
   } else {
     std::cout << "couldn't find location of u_ModelMatrix\n" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+    GLint u_ProjectionLocation =
+      glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_Projection");
+
+  if (u_ProjectionLocation >= 0) {
+    glUniformMatrix4fv(u_ProjectionLocation, 1, GL_FALSE, &perspective[0][0]);
+  } else {
+    std::cout << "couldn't find location of u_Projection\n" << std::endl;
     exit(EXIT_FAILURE);
   }
 }
