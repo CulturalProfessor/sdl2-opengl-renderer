@@ -26,8 +26,9 @@ GLuint gVertexArrayObject = 0;
 GLuint gVertexBufferObject = 0;
 GLuint gIndexBufferObject = 0;
 GLuint gGraphicsPipelineShaderProgram = 0;
-float g_Uoffset = 0.0f;
+float g_Uoffset = -2.0f;
 float g_URotate = 0.0f;
+float g_UScale = 0.5f;
 
 static void GLClearAllErrors() {
   while (glGetError() != GL_NO_ERROR) {
@@ -199,7 +200,8 @@ void input() {
   if (state[SDL_SCANCODE_DOWN]) {
     g_Uoffset -= 0.001f;
     std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
-  }  if (state[SDL_SCANCODE_LEFT]) {
+  }
+  if (state[SDL_SCANCODE_LEFT]) {
     g_URotate -= 0.01f;
     std::cout << "g_URotate: " << g_URotate << std::endl;
   }
@@ -223,6 +225,8 @@ void preDraw() {
 
   model =
       glm::rotate(model, glm::radians(g_URotate), glm::vec3(0.0f, 1.0f, 0.0f));
+
+  model = glm::scale(model, glm::vec3(g_UScale, g_UScale, g_UScale));
 
   glm::mat4 perspective =
       glm::perspective(glm::radians(45.0f),
