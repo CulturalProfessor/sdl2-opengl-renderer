@@ -1,3 +1,4 @@
+#include "Camera.hpp"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -29,6 +30,8 @@ GLuint gGraphicsPipelineShaderProgram = 0;
 float g_Uoffset = -2.0f;
 float g_URotate = 0.0f;
 float g_UScale = 0.5f;
+// Create a single global camera
+Camera gCamera;
 
 static void GLClearAllErrors() {
   while (glGetError() != GL_NO_ERROR) {
@@ -192,22 +195,28 @@ void input() {
     }
   }
 
+  g_URotate -= 0.01f;
+  std::cout << "g_URotate: " << g_URotate << std::endl;
+  g_URotate += 0.01f;
+  std::cout << "g_URotate: " << g_URotate << std::endl;
+  // TODO : Use some other key to move object
+  // g_Uoffset += 0.001f;
+  // std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
   const Uint8 *state = SDL_GetKeyboardState(NULL);
+  float speed = 0.0005f;
   if (state[SDL_SCANCODE_UP]) {
-    g_Uoffset += 0.001f;
-    std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
+    gCamera.MoveForward(speed);
   }
   if (state[SDL_SCANCODE_DOWN]) {
-    g_Uoffset -= 0.001f;
-    std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
+    gCamera.MoveBackward(speed);
+    // g_Uoffset -= 0.001f;
+    // std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
   }
   if (state[SDL_SCANCODE_LEFT]) {
-    g_URotate -= 0.01f;
-    std::cout << "g_URotate: " << g_URotate << std::endl;
+    gCamera.MoveLeft(speed);
   }
   if (state[SDL_SCANCODE_RIGHT]) {
-    g_URotate += 0.01f;
-    std::cout << "g_URotate: " << g_URotate << std::endl;
+    gCamera.MoveRight(speed);
   }
 }
 
@@ -220,6 +229,12 @@ void preDraw() {
   glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
   glUseProgram(gGraphicsPipelineShaderProgram);
 
+  g_URotate -= 0.01f;
+  std::cout << "g_URotate: " << g_URotate << std::endl;
+
+  // Order of transformations matter,
+  // try changing for different effects
+  // keep input matrix as identity
   glm::mat4 model =
       glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, g_Uoffset));
 
@@ -228,9 +243,24 @@ void preDraw() {
 
   model = glm::scale(model, glm::vec3(g_UScale, g_UScale, g_UScale));
 
+  glm::mat4 view = gCamera.GetViewMatrix();
+
+  GLint u_ViewLocation =
+      glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ViewMatrix");
+
+  if (u_ViewLocation >= 0) {
+    glUniformMatrix4fv(u_ViewLocation, 1, GL_FALSE, &view[0][0]);
+  } else {
+    std::cout
+        << "couldn't find location of u_ViewMatrix, maybe be spelling mistake\n"
+        << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // Projection Matrix (in perspective)
   glm::mat4 perspective =
       glm::perspective(glm::radians(45.0f),
-                       (float)gScreenWidth / (float)gScreenHeight, 0.1f, 10.0f);
+                       (float)gScreenWidth / (float)gScreenHeight, 0.1f, 100.0f);
 
   GLint u_ModelMatrixLocation =
       glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ModelMatrix");
@@ -242,6 +272,7 @@ void preDraw() {
     exit(EXIT_FAILURE);
   }
 
+  // Retrieve our location of our perspective matrix uniform
   GLint u_ProjectionLocation =
       glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_Projection");
 
@@ -255,7 +286,6 @@ void preDraw() {
 
 void draw() {
   glBindVertexArray(gVertexArrayObject);
-  GLCheck(glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject));
   GLCheck(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
 }
 
