@@ -5,7 +5,9 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/trigonometric.hpp"
 #include <SDL2/SDL.h>
+#include <SDL_events.h>
 #include <SDL_keyboard.h>
+#include <SDL_mouse.h>
 #include <SDL_scancode.h>
 #include <SDL_stdinc.h>
 #include <cstdlib>
@@ -187,18 +189,24 @@ void createGraphicsPipeline() {
 }
 
 void input() {
+
+  static int mouseX = gScreenWidth / 2, mouseY = gScreenHeight / 2;
   SDL_Event e;
   while (SDL_PollEvent(&e) != 0) {
     if (e.type == SDL_QUIT) {
       std::cout << "Exiting" << std::endl;
       gQuit = true;
+    } else if (e.type == SDL_MOUSEMOTION) {
+      mouseX += e.motion.xrel;
+      mouseY += e.motion.yrel;
+      gCamera.MouseLook(mouseX, mouseY);
     }
   }
 
   g_URotate -= 0.01f;
-  std::cout << "g_URotate: " << g_URotate << std::endl;
+  // std::cout << "g_URotate: " << g_URotate << std::endl;
   g_URotate += 0.01f;
-  std::cout << "g_URotate: " << g_URotate << std::endl;
+  // std::cout << "g_URotate: " << g_URotate << std::endl;
   // TODO : Use some other key to move object
   // g_Uoffset += 0.001f;
   // std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
@@ -230,7 +238,7 @@ void preDraw() {
   glUseProgram(gGraphicsPipelineShaderProgram);
 
   g_URotate -= 0.01f;
-  std::cout << "g_URotate: " << g_URotate << std::endl;
+  // std::cout << "g_URotate: " << g_URotate << std::endl;
 
   // Order of transformations matter,
   // try changing for different effects
@@ -258,9 +266,9 @@ void preDraw() {
   }
 
   // Projection Matrix (in perspective)
-  glm::mat4 perspective =
-      glm::perspective(glm::radians(45.0f),
-                       (float)gScreenWidth / (float)gScreenHeight, 0.1f, 100.0f);
+  glm::mat4 perspective = glm::perspective(
+      glm::radians(45.0f), (float)gScreenWidth / (float)gScreenHeight, 0.1f,
+      100.0f);
 
   GLint u_ModelMatrixLocation =
       glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ModelMatrix");
@@ -290,6 +298,10 @@ void draw() {
 }
 
 void mainLoop() {
+  SDL_WarpMouseInWindow(gGraphicsApplicationWindow, gScreenWidth / 2,
+                        gScreenHeight / 2);
+  SDL_SetRelativeMouseMode(SDL_TRUE);
+
   while (!gQuit) {
     input();
     preDraw();

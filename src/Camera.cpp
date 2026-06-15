@@ -1,6 +1,12 @@
 #include "Camera.hpp"
 #include "glm/ext/matrix_transform.hpp"
+#include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
+#include "glm/trigonometric.hpp"
+#include <iostream>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/rotate_vector.hpp"
 
 Camera::Camera() {
   // Assume we are at origin
@@ -14,13 +20,31 @@ Camera::Camera() {
 }
 
 glm::mat4 Camera::GetViewMatrix() const {
-  return glm::lookAt(mEye, mViewDirection, mUpVector);
+  return glm::lookAt(mEye, mEye+mViewDirection, mUpVector);
 }
+
+void Camera::MouseLook(int mouseX, int mouseY) {
+  std::cout << "Mouse :" << mouseX << "," << mouseY << std::endl;
+  glm::vec2 currentMouse = glm::vec2(mouseX, mouseY);
+
+  static bool firstLook = true;
+  if (firstLook) {
+    mOldMousePosition = currentMouse;
+    firstLook = false;
+  }
+
+  glm::vec2 mouseDelta = mOldMousePosition - currentMouse;
+
+  mViewDirection =
+      glm::rotate(mViewDirection, glm::radians(mouseDelta.x), mUpVector);
+
+  mOldMousePosition = currentMouse;
+};
 
 void Camera::MoveForward(float speed) {
   // Simple not yet correct
-  mEye.z -= speed;
+  mEye += (mViewDirection * speed);
 };
-void Camera::MoveBackward(float speed) { mEye.z += speed; };
+void Camera::MoveBackward(float speed) { mEye -= (mViewDirection * speed); };
 void Camera::MoveLeft(float speed) {};
 void Camera::MoveRight(float speed) {};
