@@ -2,6 +2,7 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
+#include "glm/geometric.hpp"
 #include "glm/trigonometric.hpp"
 #include <iostream>
 
@@ -20,7 +21,7 @@ Camera::Camera() {
 }
 
 glm::mat4 Camera::GetViewMatrix() const {
-  return glm::lookAt(mEye, mEye+mViewDirection, mUpVector);
+  return glm::lookAt(mEye, mEye + mViewDirection, mUpVector);
 }
 
 void Camera::MouseLook(int mouseX, int mouseY) {
@@ -46,5 +47,11 @@ void Camera::MoveForward(float speed) {
   mEye += (mViewDirection * speed);
 };
 void Camera::MoveBackward(float speed) { mEye -= (mViewDirection * speed); };
-void Camera::MoveLeft(float speed) {};
-void Camera::MoveRight(float speed) {};
+void Camera::MoveLeft(float speed) {
+  glm::vec3 rightVector = glm::cross(mViewDirection, mUpVector);
+  mEye -= rightVector * speed;
+};
+void Camera::MoveRight(float speed) {
+  glm::vec3 rightVector = glm::cross(mViewDirection, mUpVector);
+  mEye += rightVector * speed;
+};
