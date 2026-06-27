@@ -32,19 +32,192 @@ struct App
   Camera mCamera;
 };
 
+struct Transform
+{
+  float x, y, z;
+};
+
 struct Mesh3D
 {
   GLuint mVertexArrayObject = 0;
   GLuint mVertexBufferObject = 0;
   GLuint mIndexBufferObject = 0;
-  float m_Uoffset = -2.0f;
+  GLuint mPipeline = 0;
+  Transform mTransform;
   float m_URotate = 0.0f;
   float m_UScale = 0.5f;
 };
 
 App gApp;
-Mesh3D gmesh1;
-Mesh3D gmesh2;
+Mesh3D gMesh1;
+Mesh3D gMesh2;
+
+// #define GLCheck(x)    \
+//   GLClearAllErrors(); \
+//   x;                  \
+//   GLCheckErrorStatus(#x, __LINE__);
+
+// Setup vertex data per mesh
+void meshCreate(Mesh3D *mesh)
+{
+  const std::vector<GLfloat> vertexData{
+      -0.5f,
+      -0.5f,
+      0.0f, // vertex 1
+      1.0f,
+      0.0f,
+      0.0f, // color of vertex 1
+      0.5f,
+      -0.5f,
+      0.0f, // vertex 2
+      0.0f,
+      1.0f,
+      0.0f, // color of vertex 2
+      -0.5f,
+      0.5f,
+      0.0f, // vertex 3
+      0.0f,
+      0.0f,
+      1.0f, // color of vertex 3
+      0.5f,
+      0.5f,
+      0.0f, // vertex 4
+      0.0f,
+      1.0f,
+      0.0f, // color of vertex 4
+  };
+
+  const std::vector<GLuint> indexBufferData{2, 0, 1, 3, 2, 1};
+  glGenVertexArrays(1, &mesh->mVertexArrayObject);
+  glBindVertexArray(mesh->mVertexArrayObject);
+  glGenBuffers(1, &mesh->mVertexBufferObject);
+  glBindBuffer(GL_ARRAY_BUFFER, mesh->mVertexBufferObject);
+  glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(GLfloat),
+               vertexData.data(), GL_STATIC_DRAW);
+
+  // index buffer object
+  glGenBuffers(1, &mesh->mIndexBufferObject);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->mIndexBufferObject);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferData.size() * sizeof(GLuint),
+               indexBufferData.data(), GL_STATIC_DRAW);
+
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 6, (void *)0);
+
+  // Color Information
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6,
+                        (GLvoid *)(sizeof(GLfloat) * 3));
+
+  glBindVertexArray(0);
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+}
+
+void meshDelete(Mesh3D *mesh)
+{
+  glDeleteBuffers(1, &mesh->mVertexBufferObject);
+  glDeleteVertexArrays(1, &mesh->mVertexArrayObject);
+}
+
+/*
+Needs to set pipeline before we draw
+*/
+void meshSetPipeline(Mesh3D *mesh, GLuint pipeline)
+{
+  mesh->mPipeline = pipeline;
+}
+
+void meshUpdate(Mesh3D *mesh)
+{
+
+  glUseProgram(mesh->mPipeline);
+
+  mesh->m_URotate -= 1.0f;
+  // std::cout << "g_URotate: " << g_URotate << std::endl;
+
+  // Order of transformations matter,
+  // try changing for different effects
+  // keep input matrix as identity
+  glm::mat4 model =
+      glm::translate(glm::mat4(1.0f), glm::vec3(mesh->mTransform.x, mesh->mTransform.y, mesh->mTransform.z));
+
+  model =
+      glm::rotate(model, glm::radians(mesh->m_URotate), glm::vec3(0.0f, 1.0f, 0.0f));
+
+  model = glm::scale(model, glm::vec3(mesh->m_UScale, mesh->m_UScale, mesh->m_UScale));
+
+  glm::mat4 view = gApp.mCamera.GetViewMatrix();
+
+  GLint u_ViewLocation =
+      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ViewMatrix");
+
+  if (u_ViewLocation >= 0)
+  {
+    glUniformMatrix4fv(u_ViewLocation, 1, false, &view[0][0]);
+  }
+  else
+  {
+    std::cout
+        << "couldn't find location of u_ViewMatrix, maybe be spelling mistake\n"
+        << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // Projection Matrix (in perspective)
+  glm::mat4 perspective = glm::perspective(
+      glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight, 0.1f,
+      100.0f);
+
+  GLint u_ModelMatrixLocation =
+      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ModelMatrix");
+
+  if (u_ModelMatrixLocation >= 0)
+  {
+    glUniformMatrix4fv(u_ModelMatrixLocation, 1, false, &model[0][0]);
+  }
+  else
+  {
+    std::cout << "couldn't find location of u_ModelMatrix\n"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // Retrieve our location of our perspective matrix uniform
+  GLint u_ProjectionLocation =
+      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_Projection");
+
+  if (u_ProjectionLocation >= 0)
+  {
+    glUniformMatrix4fv(u_ProjectionLocation, 1, false, &perspective[0][0]);
+  }
+  else
+  {
+    std::cout << "couldn't find location of u_Projection\n"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+}
+
+/**
+ * Note : We per mesh choose the graphics pipeline we'll use
+ * Generally not efficient to change state(pipelines) frequently,
+ * we're doing this for flexibilty
+ */
+
+void drawMesh(Mesh3D *mesh)
+{
+  if (mesh == nullptr)
+  {
+    return;
+  }
+
+  // setup which graphic pipeline we'll use
+  glUseProgram(mesh->mPipeline);
+  glBindVertexArray(mesh->mVertexArrayObject);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  glUseProgram(0);
+}
 
 static void GLClearAllErrors()
 {
@@ -65,11 +238,6 @@ static bool GLCheckErrorStatus(const char *function, int line)
   }
   return false;
 }
-
-#define GLCheck(x)    \
-  GLClearAllErrors(); \
-  x;                  \
-  GLCheckErrorStatus(#x, __LINE__);
 
 std::string loadShaderAsString(const std::string &filename)
 {
@@ -132,62 +300,6 @@ void initializeProgram(App *app)
   }
 
   getOpenGLVersion();
-}
-
-void vertexSpecification(Mesh3D *mesh)
-{
-  const std::vector<GLfloat> vertexData{
-      -0.5f,
-      -0.5f,
-      0.0f, // vertex 1
-      1.0f,
-      0.0f,
-      0.0f, // color of vertex 1
-      0.5f,
-      -0.5f,
-      0.0f, // vertex 2
-      0.0f,
-      1.0f,
-      0.0f, // color of vertex 2
-      -0.5f,
-      0.5f,
-      0.0f, // vertex 3
-      0.0f,
-      0.0f,
-      1.0f, // color of vertex 3
-      0.5f,
-      0.5f,
-      0.0f, // vertex 4
-      0.0f,
-      1.0f,
-      0.0f, // color of vertex 4
-  };
-
-  const std::vector<GLuint> indexBufferData{2, 0, 1, 3, 2, 1};
-  glGenVertexArrays(1, &mesh->mVertexArrayObject);
-  glBindVertexArray(mesh->mVertexArrayObject);
-  glGenBuffers(1, &mesh->mVertexBufferObject);
-  glBindBuffer(GL_ARRAY_BUFFER, mesh->mVertexBufferObject);
-  glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(GLfloat),
-               vertexData.data(), GL_STATIC_DRAW);
-
-  // index buffer object
-  glGenBuffers(1, &mesh->mIndexBufferObject);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->mIndexBufferObject);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferData.size() * sizeof(GLuint),
-               indexBufferData.data(), GL_STATIC_DRAW);
-
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 6, (void *)0);
-
-  // Color Information
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6,
-                        (GLvoid *)(sizeof(GLfloat) * 3));
-
-  glBindVertexArray(0);
-  glDisableVertexAttribArray(0);
-  glDisableVertexAttribArray(1);
 }
 
 GLuint compileShader(GLuint type, const std::string &source)
@@ -263,6 +375,7 @@ void input()
   {
     gApp.mCamera.MoveForward(speed);
   }
+
   if (state[SDL_SCANCODE_DOWN])
   {
     gApp.mCamera.MoveBackward(speed);
@@ -279,89 +392,6 @@ void input()
   }
 }
 
-void preDraw()
-{
-  glDisable(GL_DEPTH_TEST);
-  glDisable(GL_CULL_FACE);
-
-  glViewport(0, 0, gApp.mScreenWidth, gApp.mScreenHeight);
-  glClearColor(1.f, 1.f, 0.f, 1.f);
-  glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-  glUseProgram(gApp.mGraphicsPipelineShaderProgram);
-
-  gmesh1.m_URotate -= 1.0f;
-  // std::cout << "g_URotate: " << g_URotate << std::endl;
-
-  // Order of transformations matter,
-  // try changing for different effects
-  // keep input matrix as identity
-  glm::mat4 model =
-      glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, gmesh1.m_Uoffset));
-
-  model =
-      glm::rotate(model, glm::radians(gmesh1.m_URotate), glm::vec3(0.0f, 1.0f, 0.0f));
-
-  model = glm::scale(model, glm::vec3(gmesh1.m_UScale, gmesh1.m_UScale, gmesh1.m_UScale));
-
-  glm::mat4 view = gApp.mCamera.GetViewMatrix();
-
-  GLint u_ViewLocation =
-      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ViewMatrix");
-
-  if (u_ViewLocation >= 0)
-  {
-    glUniformMatrix4fv(u_ViewLocation, 1, false, &view[0][0]);
-  }
-  else
-  {
-    std::cout
-        << "couldn't find location of u_ViewMatrix, maybe be spelling mistake\n"
-        << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  // Projection Matrix (in perspective)
-  glm::mat4 perspective = glm::perspective(
-      glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight, 0.1f,
-      100.0f);
-
-  GLint u_ModelMatrixLocation =
-      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ModelMatrix");
-
-  if (u_ModelMatrixLocation >= 0)
-  {
-    glUniformMatrix4fv(u_ModelMatrixLocation, 1, false, &model[0][0]);
-  }
-  else
-  {
-    std::cout << "couldn't find location of u_ModelMatrix\n"
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  // Retrieve our location of our perspective matrix uniform
-  GLint u_ProjectionLocation =
-      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_Projection");
-
-  if (u_ProjectionLocation >= 0)
-  {
-    glUniformMatrix4fv(u_ProjectionLocation, 1, false, &perspective[0][0]);
-  }
-  else
-  {
-    std::cout << "couldn't find location of u_Projection\n"
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
-}
-
-void draw()
-{
-  glBindVertexArray(gmesh1.mVertexArrayObject);
-  GLCheck(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
-  glUseProgram(0);
-}
-
 void mainLoop()
 {
   SDL_WarpMouseInWindow(gApp.mGraphicsApplicationWindow, gApp.mScreenWidth / 2,
@@ -371,8 +401,21 @@ void mainLoop()
   while (!gApp.mQuit)
   {
     input();
-    preDraw();
-    draw();
+
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glViewport(0, 0, gApp.mScreenWidth, gApp.mScreenHeight);
+    glClearColor(1.f, 1.f, 0.f, 1.f);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+    meshUpdate(&gMesh1);
+    drawMesh(&gMesh1);
+    
+    meshUpdate(&gMesh2);
+    drawMesh(&gMesh2);
+    // meshCreate();
     SDL_GL_SwapWindow(gApp.mGraphicsApplicationWindow);
   }
 }
@@ -380,8 +423,8 @@ void cleanUp()
 {
   SDL_DestroyWindow(gApp.mGraphicsApplicationWindow);
   gApp.mGraphicsApplicationWindow = nullptr;
-  glDeleteBuffers(1, &gmesh1.mVertexBufferObject);
-  glDeleteVertexArrays(1, &gmesh1.mVertexArrayObject);
+  meshDelete(&gMesh1);
+  meshDelete(&gMesh2);
   glDeleteProgram(gApp.mGraphicsPipelineShaderProgram);
   SDL_Quit();
 }
@@ -389,8 +432,19 @@ void cleanUp()
 int main()
 {
   initializeProgram(&gApp);
-  vertexSpecification(&gmesh1);
+  meshCreate(&gMesh1);
+  gMesh1.mTransform.x = 0.0f;
+  gMesh1.mTransform.y = 0.0f;
+  gMesh1.mTransform.z = -2.0f;
+  meshCreate(&gMesh2);
+  gMesh2.mTransform.x = 0.0f;
+  gMesh2.mTransform.y = 0.0f;
+  gMesh2.mTransform.z = -4.0f;
   createGraphicsPipeline();
+
+  // For each our meshes set them to a pipeline
+  meshSetPipeline(&gMesh1, gApp.mGraphicsPipelineShaderProgram);
+  meshSetPipeline(&gMesh2, gApp.mGraphicsPipelineShaderProgram);
   mainLoop();
   cleanUp();
   return 0;
