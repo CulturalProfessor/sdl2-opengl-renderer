@@ -32,7 +32,7 @@ struct App {
 };
 
 struct Transform {
-  float x, y, z;
+  glm::mat4 mModelMatrix{glm::mat4(1.0f)};
 };
 
 struct Mesh3D {
@@ -41,8 +41,6 @@ struct Mesh3D {
   GLuint mIndexBufferObject = 0;
   GLuint mPipeline = 0;
   Transform mTransform;
-  float m_URotate = 0.0f;
-  float m_UScale = 0.5f;
 };
 
 App gApp;
@@ -70,22 +68,14 @@ int findUniformLocation(GLuint pipeline, const GLchar *name) {
 // Setup vertex data per mesh
 void meshCreate(Mesh3D *mesh) {
   const std::vector<GLfloat> vertexData{
-      -0.5f, -0.5f,
-      0.0f, // vertex 1
-      1.0f,  0.0f,
-      0.0f, // color of vertex 1
-      0.5f,  -0.5f,
-      0.0f, // vertex 2
-      0.0f,  1.0f,
-      0.0f, // color of vertex 2
-      -0.5f, 0.5f,
-      0.0f, // vertex 3
-      0.0f,  0.0f,
-      1.0f, // color of vertex 3
-      0.5f,  0.5f,
-      0.0f, // vertex 4
-      0.0f,  1.0f,
-      0.0f, // color of vertex 4
+      -0.5f, -0.5f, 0.0f, // vertex 1
+      1.0f,  0.0f,  0.0f, // color of vertex 1
+      0.5f,  -0.5f, 0.0f, // vertex 2
+      0.0f,  1.0f,  0.0f, // color of vertex 2
+      -0.5f, 0.5f,  0.0f, // vertex 3
+      0.0f,  0.0f,  1.0f, // color of vertex 3
+      0.5f,  0.5f,  0.0f, // vertex 4
+      0.0f,  1.0f,  0.0f, // color of vertex 4
   };
 
   const std::vector<GLuint> indexBufferData{2, 0, 1, 3, 2, 1};
@@ -140,28 +130,13 @@ void drawMesh(Mesh3D *mesh) {
 
   glUseProgram(mesh->mPipeline);
 
-  mesh->m_URotate -= 1.0f;
-  // std::cout << "g_URotate: " << g_URotate << std::endl;
-
-  // Order of transformations matter,
-  // try changing for different effects
-  // keep input matrix as identity
-  glm::mat4 model = glm::translate(
-      glm::mat4(1.0f),
-      glm::vec3(mesh->mTransform.x, mesh->mTransform.y, mesh->mTransform.z));
-
-  model = glm::rotate(model, glm::radians(mesh->m_URotate),
-                      glm::vec3(0.0f, 1.0f, 0.0f));
-
-  model = glm::scale(model,
-                     glm::vec3(mesh->m_UScale, mesh->m_UScale, mesh->m_UScale));
-
   // note we oftem combine view and model matrix to send in one uniform
   glm::mat4 view = gApp.mCamera.GetViewMatrix();
 
   GLint u_ModelMatrixLocation =
       findUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ModelMatrix");
-  glUniformMatrix4fv(u_ModelMatrixLocation, 1, false, &model[0][0]);
+  glUniformMatrix4fv(u_ModelMatrixLocation, 1, false,
+                     &mesh->mTransform.mModelMatrix[0][0]);
 
   GLint u_ViewLocation =
       findUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ViewMatrix");
@@ -180,6 +155,24 @@ void drawMesh(Mesh3D *mesh) {
   glBindVertexArray(mesh->mVertexArrayObject);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
   glUseProgram(0);
+}
+
+// translates a mesh, updates it's model matrix
+void meshTranslate(Mesh3D *mesh, float x, float y, float z) {
+  mesh->mTransform.mModelMatrix =
+      glm::translate(mesh->mTransform.mModelMatrix, glm::vec3(x, y, z));
+}
+
+// rotates a mesh about a axis (a vector)
+void meshRotate(Mesh3D *mesh, float yAngle, glm::vec3 axis) {
+  mesh->mTransform.mModelMatrix =
+      glm::rotate(mesh->mTransform.mModelMatrix, glm::radians(yAngle), axis);
+}
+
+// scales a mesh in non-uniform way
+void meshScale(Mesh3D *mesh, float x, float y, float z) {
+  mesh->mTransform.mModelMatrix =
+      glm::scale(mesh->mTransform.mModelMatrix, glm::vec3(x, y, z));
 }
 
 static void GLClearAllErrors() {
@@ -343,6 +336,10 @@ void mainLoop() {
     glClearColor(1.f, 1.f, 0.f, 1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+    static float rotate = 0.5f;
+
+    meshRotate(&gMesh1, rotate, glm::vec3(0.0f, 1.0f, 0.0f));
+    meshRotate(&gMesh2, -rotate, glm::vec3(0.0f, 1.0f, 0.0f));
     drawMesh(&gMesh1);
 
     drawMesh(&gMesh2);
@@ -366,13 +363,16 @@ int main() {
       0.1f, 100.0f);
 
   meshCreate(&gMesh1);
-  gMesh1.mTransform.x = 0.0f;
-  gMesh1.mTransform.y = 0.0f;
-  gMesh1.mTransform.z = -2.0f;
   meshCreate(&gMesh2);
-  gMesh2.mTransform.x = 0.0f;
-  gMesh2.mTransform.y = 0.0f;
-  gMesh2.mTransform.z = -4.0f;
+
+  // Order of transformations matter,
+  // try changing for different effects
+  // keep input matrix as identity
+  meshTranslate(&gMesh1, 0.0f, 0.0f, -2.0f);
+  meshScale(&gMesh1, 1.0f, 1.0f, 1.0f);
+
+  meshTranslate(&gMesh2, 0.0f, 0.0f, -4.0f);
+  meshScale(&gMesh2, 1.0f, 2.0f, 1.0f);
   createGraphicsPipeline();
 
   // For each our meshes set them to a pipeline
