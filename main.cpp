@@ -57,6 +57,22 @@ Mesh3D gMesh2;
 //   x;                  \
 //   GLCheckErrorStatus(#x, __LINE__);
 
+// Returns the location of uniform variable based on it's name
+int findUniformLocation(GLuint pipeline, const GLchar *name)
+{
+  GLint location =
+      glGetUniformLocation(pipeline, name);
+
+  if (location < 0)
+  {
+    std::cerr << "couldn't find location of" << name << "maybe spelling error"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  return location;
+}
+
 // Setup vertex data per mesh
 void meshCreate(Mesh3D *mesh)
 {
@@ -128,8 +144,18 @@ void meshSetPipeline(Mesh3D *mesh, GLuint pipeline)
   mesh->mPipeline = pipeline;
 }
 
-void meshUpdate(Mesh3D *mesh)
+/**
+ * Note : We per mesh choose the graphics pipeline we'll use
+ * Generally not efficient to change state(pipelines) frequently,
+ * we're doing this for flexibilty
+ */
+
+void drawMesh(Mesh3D *mesh)
 {
+  if (mesh == nullptr)
+  {
+    return;
+  }
 
   glUseProgram(mesh->mPipeline);
 
@@ -147,41 +173,21 @@ void meshUpdate(Mesh3D *mesh)
 
   model = glm::scale(model, glm::vec3(mesh->m_UScale, mesh->m_UScale, mesh->m_UScale));
 
+  // note we oftem combine view and model matrix to send in one uniform
   glm::mat4 view = gApp.mCamera.GetViewMatrix();
 
-  GLint u_ViewLocation =
-      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ViewMatrix");
+  GLint u_ModelMatrixLocation =
+      findUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ModelMatrix");
+  glUniformMatrix4fv(u_ModelMatrixLocation, 1, false, &model[0][0]);
 
-  if (u_ViewLocation >= 0)
-  {
-    glUniformMatrix4fv(u_ViewLocation, 1, false, &view[0][0]);
-  }
-  else
-  {
-    std::cout
-        << "couldn't find location of u_ViewMatrix, maybe be spelling mistake\n"
-        << std::endl;
-    exit(EXIT_FAILURE);
-  }
+  GLint u_ViewLocation =
+      findUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ViewMatrix");
+  glUniformMatrix4fv(u_ViewLocation, 1, false, &view[0][0]);
 
   // Projection Matrix (in perspective)
   glm::mat4 perspective = glm::perspective(
       glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight, 0.1f,
       100.0f);
-
-  GLint u_ModelMatrixLocation =
-      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ModelMatrix");
-
-  if (u_ModelMatrixLocation >= 0)
-  {
-    glUniformMatrix4fv(u_ModelMatrixLocation, 1, false, &model[0][0]);
-  }
-  else
-  {
-    std::cout << "couldn't find location of u_ModelMatrix\n"
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
 
   // Retrieve our location of our perspective matrix uniform
   GLint u_ProjectionLocation =
@@ -197,21 +203,6 @@ void meshUpdate(Mesh3D *mesh)
               << std::endl;
     exit(EXIT_FAILURE);
   }
-}
-
-/**
- * Note : We per mesh choose the graphics pipeline we'll use
- * Generally not efficient to change state(pipelines) frequently,
- * we're doing this for flexibilty
- */
-
-void drawMesh(Mesh3D *mesh)
-{
-  if (mesh == nullptr)
-  {
-    return;
-  }
-
   // setup which graphic pipeline we'll use
   glUseProgram(mesh->mPipeline);
   glBindVertexArray(mesh->mVertexArrayObject);
@@ -402,7 +393,6 @@ void mainLoop()
   {
     input();
 
-
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
 
@@ -410,10 +400,8 @@ void mainLoop()
     glClearColor(1.f, 1.f, 0.f, 1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-    meshUpdate(&gMesh1);
     drawMesh(&gMesh1);
-    
-    meshUpdate(&gMesh2);
+
     drawMesh(&gMesh2);
     // meshCreate();
     SDL_GL_SwapWindow(gApp.mGraphicsApplicationWindow);
