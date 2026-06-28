@@ -20,8 +20,7 @@
 #include <string>
 #include <vector>
 
-struct App
-{
+struct App {
   int mScreenWidth = 640;
   int mScreenHeight = 480;
   SDL_Window *mGraphicsApplicationWindow = nullptr;
@@ -32,13 +31,11 @@ struct App
   Camera mCamera;
 };
 
-struct Transform
-{
+struct Transform {
   float x, y, z;
 };
 
-struct Mesh3D
-{
+struct Mesh3D {
   GLuint mVertexArrayObject = 0;
   GLuint mVertexBufferObject = 0;
   GLuint mIndexBufferObject = 0;
@@ -58,13 +55,10 @@ Mesh3D gMesh2;
 //   GLCheckErrorStatus(#x, __LINE__);
 
 // Returns the location of uniform variable based on it's name
-int findUniformLocation(GLuint pipeline, const GLchar *name)
-{
-  GLint location =
-      glGetUniformLocation(pipeline, name);
+int findUniformLocation(GLuint pipeline, const GLchar *name) {
+  GLint location = glGetUniformLocation(pipeline, name);
 
-  if (location < 0)
-  {
+  if (location < 0) {
     std::cerr << "couldn't find location of" << name << "maybe spelling error"
               << std::endl;
     exit(EXIT_FAILURE);
@@ -74,32 +68,23 @@ int findUniformLocation(GLuint pipeline, const GLchar *name)
 }
 
 // Setup vertex data per mesh
-void meshCreate(Mesh3D *mesh)
-{
+void meshCreate(Mesh3D *mesh) {
   const std::vector<GLfloat> vertexData{
-      -0.5f,
-      -0.5f,
+      -0.5f, -0.5f,
       0.0f, // vertex 1
-      1.0f,
-      0.0f,
+      1.0f,  0.0f,
       0.0f, // color of vertex 1
-      0.5f,
-      -0.5f,
+      0.5f,  -0.5f,
       0.0f, // vertex 2
-      0.0f,
-      1.0f,
+      0.0f,  1.0f,
       0.0f, // color of vertex 2
-      -0.5f,
-      0.5f,
+      -0.5f, 0.5f,
       0.0f, // vertex 3
-      0.0f,
-      0.0f,
+      0.0f,  0.0f,
       1.0f, // color of vertex 3
-      0.5f,
-      0.5f,
+      0.5f,  0.5f,
       0.0f, // vertex 4
-      0.0f,
-      1.0f,
+      0.0f,  1.0f,
       0.0f, // color of vertex 4
   };
 
@@ -130,8 +115,7 @@ void meshCreate(Mesh3D *mesh)
   glDisableVertexAttribArray(1);
 }
 
-void meshDelete(Mesh3D *mesh)
-{
+void meshDelete(Mesh3D *mesh) {
   glDeleteBuffers(1, &mesh->mVertexBufferObject);
   glDeleteVertexArrays(1, &mesh->mVertexArrayObject);
 }
@@ -139,8 +123,7 @@ void meshDelete(Mesh3D *mesh)
 /*
 Needs to set pipeline before we draw
 */
-void meshSetPipeline(Mesh3D *mesh, GLuint pipeline)
-{
+void meshSetPipeline(Mesh3D *mesh, GLuint pipeline) {
   mesh->mPipeline = pipeline;
 }
 
@@ -150,10 +133,8 @@ void meshSetPipeline(Mesh3D *mesh, GLuint pipeline)
  * we're doing this for flexibilty
  */
 
-void drawMesh(Mesh3D *mesh)
-{
-  if (mesh == nullptr)
-  {
+void drawMesh(Mesh3D *mesh) {
+  if (mesh == nullptr) {
     return;
   }
 
@@ -165,13 +146,15 @@ void drawMesh(Mesh3D *mesh)
   // Order of transformations matter,
   // try changing for different effects
   // keep input matrix as identity
-  glm::mat4 model =
-      glm::translate(glm::mat4(1.0f), glm::vec3(mesh->mTransform.x, mesh->mTransform.y, mesh->mTransform.z));
+  glm::mat4 model = glm::translate(
+      glm::mat4(1.0f),
+      glm::vec3(mesh->mTransform.x, mesh->mTransform.y, mesh->mTransform.z));
 
-  model =
-      glm::rotate(model, glm::radians(mesh->m_URotate), glm::vec3(0.0f, 1.0f, 0.0f));
+  model = glm::rotate(model, glm::radians(mesh->m_URotate),
+                      glm::vec3(0.0f, 1.0f, 0.0f));
 
-  model = glm::scale(model, glm::vec3(mesh->m_UScale, mesh->m_UScale, mesh->m_UScale));
+  model = glm::scale(model,
+                     glm::vec3(mesh->m_UScale, mesh->m_UScale, mesh->m_UScale));
 
   // note we oftem combine view and model matrix to send in one uniform
   glm::mat4 view = gApp.mCamera.GetViewMatrix();
@@ -185,24 +168,13 @@ void drawMesh(Mesh3D *mesh)
   glUniformMatrix4fv(u_ViewLocation, 1, false, &view[0][0]);
 
   // Projection Matrix (in perspective)
-  glm::mat4 perspective = glm::perspective(
-      glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight, 0.1f,
-      100.0f);
+  glm::mat4 perspective = gApp.mCamera.GetProjectionMatrix();
 
   // Retrieve our location of our perspective matrix uniform
   GLint u_ProjectionLocation =
-      glGetUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_Projection");
+      findUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_Projection");
+  glUniformMatrix4fv(u_ProjectionLocation, 1, false, &perspective[0][0]);
 
-  if (u_ProjectionLocation >= 0)
-  {
-    glUniformMatrix4fv(u_ProjectionLocation, 1, false, &perspective[0][0]);
-  }
-  else
-  {
-    std::cout << "couldn't find location of u_Projection\n"
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
   // setup which graphic pipeline we'll use
   glUseProgram(mesh->mPipeline);
   glBindVertexArray(mesh->mVertexArrayObject);
@@ -210,17 +182,13 @@ void drawMesh(Mesh3D *mesh)
   glUseProgram(0);
 }
 
-static void GLClearAllErrors()
-{
-  while (glGetError() != GL_NO_ERROR)
-  {
+static void GLClearAllErrors() {
+  while (glGetError() != GL_NO_ERROR) {
   }
 }
 
-static bool GLCheckErrorStatus(const char *function, int line)
-{
-  while (GLenum error = glGetError())
-  {
+static bool GLCheckErrorStatus(const char *function, int line) {
+  while (GLenum error = glGetError()) {
     // Check the hexcode of error number on
     // https://wikis.khronos.org/opengl/OpenGL_Error
     std::cout << "OpenGL Error:" << error << "\tLine:" << line
@@ -230,16 +198,13 @@ static bool GLCheckErrorStatus(const char *function, int line)
   return false;
 }
 
-std::string loadShaderAsString(const std::string &filename)
-{
+std::string loadShaderAsString(const std::string &filename) {
   std::string result = "";
   std::string line = "";
   std::ifstream myFile(filename.c_str());
 
-  if (myFile.is_open())
-  {
-    while (std::getline(myFile, line))
-    {
+  if (myFile.is_open()) {
+    while (std::getline(myFile, line)) {
       result += line + '\n';
     }
     myFile.close();
@@ -247,8 +212,7 @@ std::string loadShaderAsString(const std::string &filename)
   return result;
 }
 
-void getOpenGLVersion()
-{
+void getOpenGLVersion() {
   std::cout << "OpenGL" << glGetString(GL_VENDOR) << std::endl;
   std::cout << "OpenGL" << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL" << glGetString(GL_VERSION) << std::endl;
@@ -256,10 +220,8 @@ void getOpenGLVersion()
             << std::endl;
 }
 
-void initializeProgram(App *app)
-{
-  if (SDL_Init(SDL_INIT_VIDEO) < 0)
-  {
+void initializeProgram(App *app) {
+  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     std::cout << "SDL2 not initialized" << std::endl;
     exit(1);
   }
@@ -270,38 +232,32 @@ void initializeProgram(App *app)
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-  gApp.mGraphicsApplicationWindow = SDL_CreateWindow(
-      "OPENGL WINDOW", 0, 0, gApp.mScreenWidth, gApp.mScreenHeight, SDL_WINDOW_OPENGL);
-  if (gApp.mGraphicsApplicationWindow == nullptr)
-  {
+  gApp.mGraphicsApplicationWindow =
+      SDL_CreateWindow("OPENGL WINDOW", 0, 0, gApp.mScreenWidth,
+                       gApp.mScreenHeight, SDL_WINDOW_OPENGL);
+  if (gApp.mGraphicsApplicationWindow == nullptr) {
     std::cout << "SDL_WINDOW_OPENGL not initialized" << std::endl;
     exit(1);
   }
 
   gApp.mOpenGLContext = SDL_GL_CreateContext(gApp.mGraphicsApplicationWindow);
-  if (gApp.mOpenGLContext == nullptr)
-  {
+  if (gApp.mOpenGLContext == nullptr) {
     std::cout << "OpenGL Context not initialized" << std::endl;
     exit(1);
   }
 
-  if (!gladLoadGLLoader(SDL_GL_GetProcAddress))
-  {
+  if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
     std::cout << "GLAD not initialized" << glGetString(GL_VENDOR) << std::endl;
   }
 
   getOpenGLVersion();
 }
 
-GLuint compileShader(GLuint type, const std::string &source)
-{
+GLuint compileShader(GLuint type, const std::string &source) {
   GLuint shaderObject;
-  if (type == GL_VERTEX_SHADER)
-  {
+  if (type == GL_VERTEX_SHADER) {
     shaderObject = glCreateShader(GL_VERTEX_SHADER);
-  }
-  else if (type == GL_FRAGMENT_SHADER)
-  {
+  } else if (type == GL_FRAGMENT_SHADER) {
     shaderObject = glCreateShader(GL_FRAGMENT_SHADER);
   }
   const char *src = source.c_str();
@@ -311,8 +267,7 @@ GLuint compileShader(GLuint type, const std::string &source)
 }
 
 GLuint createShaderProgram(const std::string &vertexShaderSource,
-                           const std::string &fragmentShaderSource)
-{
+                           const std::string &fragmentShaderSource) {
   GLuint programObject = glCreateProgram();
   GLuint myVertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
   GLuint myFragmentShader =
@@ -328,8 +283,7 @@ GLuint createShaderProgram(const std::string &vertexShaderSource,
   return programObject;
 }
 
-void createGraphicsPipeline()
-{
+void createGraphicsPipeline() {
   // path should be according to exe's location
   std::string vertexShaderSource = loadShaderAsString("../shaders/vert.glsl");
   std::string fragmentShaderSource = loadShaderAsString("../shaders/frag.glsl");
@@ -337,20 +291,15 @@ void createGraphicsPipeline()
       createShaderProgram(vertexShaderSource, fragmentShaderSource);
 }
 
-void input()
-{
+void input() {
 
   static int mouseX = gApp.mScreenWidth / 2, mouseY = gApp.mScreenHeight / 2;
   SDL_Event e;
-  while (SDL_PollEvent(&e) != 0)
-  {
-    if (e.type == SDL_QUIT)
-    {
+  while (SDL_PollEvent(&e) != 0) {
+    if (e.type == SDL_QUIT) {
       std::cout << "Exiting" << std::endl;
       gApp.mQuit = true;
-    }
-    else if (e.type == SDL_MOUSEMOTION)
-    {
+    } else if (e.type == SDL_MOUSEMOTION) {
       mouseX += e.motion.xrel;
       mouseY += e.motion.yrel;
       gApp.mCamera.MouseLook(mouseX, mouseY);
@@ -362,35 +311,29 @@ void input()
   // std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
   const Uint8 *state = SDL_GetKeyboardState(NULL);
   float speed = 0.05f;
-  if (state[SDL_SCANCODE_UP])
-  {
+  if (state[SDL_SCANCODE_UP]) {
     gApp.mCamera.MoveForward(speed);
   }
 
-  if (state[SDL_SCANCODE_DOWN])
-  {
+  if (state[SDL_SCANCODE_DOWN]) {
     gApp.mCamera.MoveBackward(speed);
     // g_Uoffset -= 0.001f;
     // std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
   }
-  if (state[SDL_SCANCODE_LEFT])
-  {
+  if (state[SDL_SCANCODE_LEFT]) {
     gApp.mCamera.MoveLeft(speed);
   }
-  if (state[SDL_SCANCODE_RIGHT])
-  {
+  if (state[SDL_SCANCODE_RIGHT]) {
     gApp.mCamera.MoveRight(speed);
   }
 }
 
-void mainLoop()
-{
+void mainLoop() {
   SDL_WarpMouseInWindow(gApp.mGraphicsApplicationWindow, gApp.mScreenWidth / 2,
                         gApp.mScreenHeight / 2);
   SDL_SetRelativeMouseMode(SDL_TRUE);
 
-  while (!gApp.mQuit)
-  {
+  while (!gApp.mQuit) {
     input();
 
     glDisable(GL_DEPTH_TEST);
@@ -407,8 +350,7 @@ void mainLoop()
     SDL_GL_SwapWindow(gApp.mGraphicsApplicationWindow);
   }
 }
-void cleanUp()
-{
+void cleanUp() {
   SDL_DestroyWindow(gApp.mGraphicsApplicationWindow);
   gApp.mGraphicsApplicationWindow = nullptr;
   meshDelete(&gMesh1);
@@ -417,9 +359,12 @@ void cleanUp()
   SDL_Quit();
 }
 
-int main()
-{
+int main() {
   initializeProgram(&gApp);
+  gApp.mCamera.SetProjectionMatrix(
+      glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight,
+      0.1f, 100.0f);
+
   meshCreate(&gMesh1);
   gMesh1.mTransform.x = 0.0f;
   gMesh1.mTransform.y = 0.0f;

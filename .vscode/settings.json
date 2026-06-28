@@ -1,0 +1,23 @@
+{
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "clangd.arguments": [
+    "--compile-commands-dir=build",
+    "--background-index",
+    "--header-insertion=never",
+    "--clang-tidy=false",
+    "-j=4"
+  ],
+  "files.watcherExclude": {
+    "**/build/**": true,
+    "**/include/glm/**": true,
+    "**/.git/**": true
+  },
+  "search.exclude": {
+    "**/build": true,
+    "**/include/glm": true
+  },
+  "files.exclude": {
+    "**/.DS_Store": true
+  }
+}
