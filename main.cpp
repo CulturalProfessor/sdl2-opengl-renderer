@@ -68,17 +68,34 @@ int findUniformLocation(GLuint pipeline, const GLchar *name) {
 // Setup vertex data per mesh
 void meshCreate(Mesh3D *mesh) {
   const std::vector<GLfloat> vertexData{
-      -0.5f, -0.5f, 0.0f, // vertex 1
-      1.0f,  0.0f,  0.0f, // color of vertex 1
-      0.5f,  -0.5f, 0.0f, // vertex 2
-      0.0f,  1.0f,  0.0f, // color of vertex 2
-      -0.5f, 0.5f,  0.0f, // vertex 3
-      0.0f,  0.0f,  1.0f, // color of vertex 3
-      0.5f,  0.5f,  0.0f, // vertex 4
-      0.0f,  1.0f,  0.0f, // color of vertex 4
+      -0.5f, -0.5f, 0.5f,  // vertex 1
+      1.0f,  0.0f,  0.0f,  // color of vertex 1
+      0.5f,  -0.5f, 0.5f,  // vertex 2
+      0.0f,  1.0f,  0.0f,  // color of vertex 2
+      -0.5f, 0.5f,  0.5f,  // vertex 3
+      0.0f,  0.0f,  1.0f,  // color of vertex 3
+      0.5f,  0.5f,  0.5f,  // vertex 4
+      0.0f,  1.0f,  0.0f,  // color of vertex 4
+      -0.5f, -0.5f, -0.5f, // vertex 5
+      1.0f,  0.0f,  0.5f,  // color of vertex 5
+      0.5f,  -0.5f, -0.5f, // vertex 6
+      0.5f,  1.0f,  0.0f,  // color of vertex 6
+      -0.5f, 0.5f,  -0.5f, // vertex 7
+      0.5f,  0.0f,  1.0f,  // color of vertex 7
+      0.5f,  0.5f,  -0.5f, // vertex 8
+      0.5f,  1.0f,  0.0f,  // color of vertex 8
   };
 
-  const std::vector<GLuint> indexBufferData{2, 0, 1, 3, 2, 1};
+  // winding order, take counter clockwise of each face as
+  // seen in front of that face
+  const std::vector<GLuint> indexBufferData{
+      2, 0, 1, 1, 3, 2, // front face
+      6, 2, 3, 3, 7, 6, // top face
+      3, 1, 5, 5, 7, 3, // right face
+      7, 5, 4, 4, 6, 7, // back face
+      0, 4, 5, 5, 1, 0, // bottom face
+      6, 4, 0, 0, 2, 6  // left face
+  };
   glGenVertexArrays(1, &mesh->mVertexArrayObject);
   glBindVertexArray(mesh->mVertexArrayObject);
   glGenBuffers(1, &mesh->mVertexBufferObject);
@@ -153,7 +170,7 @@ void drawMesh(Mesh3D *mesh) {
   // setup which graphic pipeline we'll use
   glUseProgram(mesh->mPipeline);
   glBindVertexArray(mesh->mVertexArrayObject);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
   glUseProgram(0);
 }
 
@@ -329,8 +346,8 @@ void mainLoop() {
   while (!gApp.mQuit) {
     input();
 
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     glViewport(0, 0, gApp.mScreenWidth, gApp.mScreenHeight);
     glClearColor(1.f, 1.f, 0.f, 1.f);
@@ -338,8 +355,8 @@ void mainLoop() {
 
     static float rotate = 0.5f;
 
-    meshRotate(&gMesh1, rotate, glm::vec3(0.0f, 1.0f, 0.0f));
-    meshRotate(&gMesh2, -rotate, glm::vec3(0.0f, 1.0f, 0.0f));
+    meshRotate(&gMesh1, rotate, glm::vec3(1.0f, 0.5f, 0.0f));
+    meshRotate(&gMesh2, -rotate, glm::vec3(1.0f, 0.5f, 0.0f));
     drawMesh(&gMesh1);
 
     drawMesh(&gMesh2);
@@ -372,7 +389,7 @@ int main() {
   meshScale(&gMesh1, 1.0f, 1.0f, 1.0f);
 
   meshTranslate(&gMesh2, 0.0f, 0.0f, -4.0f);
-  meshScale(&gMesh2, 1.0f, 2.0f, 1.0f);
+  meshScale(&gMesh2, 2.0f, 2.0f, 1.0f);
   createGraphicsPipeline();
 
   // For each our meshes set them to a pipeline
