@@ -27,3 +27,4 @@ target_include_directories(main PRIVATE
 
 target_link_directories(main PRIVATE ${SDL2_LIBRARY_DIRS})
 target_link_libraries(main ${SDL2_LIBRARIES} ${OPENGL_gl_LIBRARY})
+target_compile_options(main PRIVATE -Wall -Wextra)
