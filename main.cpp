@@ -21,34 +21,9 @@
 #include <string>
 #include <vector>
 
-unsigned int texture;
-void generateTexture() {
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  // set the texture wrapping/filtering options (on the currently bound texture
-  // object)
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // load and generate the texture
-  int width, height, nrChannels;
-  unsigned char *data =
-      stbi_load("../container.jpg", &width, &height, &nrChannels, 0);
-  if (data) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                 GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-  } else {
-    std::cout << "Failed to load texture" << std::endl;
-  }
-  stbi_image_free(data);
-}
-
 struct App {
-  int mScreenWidth = 640;
-  int mScreenHeight = 480;
+  int mScreenWidth = 1080;
+  int mScreenHeight = 800;
   SDL_Window *mGraphicsApplicationWindow = nullptr;
   SDL_GLContext mOpenGLContext = nullptr;
   bool mQuit = false;
@@ -66,6 +41,7 @@ struct Mesh3D {
   GLuint mVertexBufferObject = 0;
   GLuint mIndexBufferObject = 0;
   GLuint mPipeline = 0;
+  GLuint mTexture;
   Transform mTransform;
 };
 
@@ -77,6 +53,32 @@ Mesh3D gMesh2;
 //   GLClearAllErrors(); \
 //   x;                  \
 //   GLCheckErrorStatus(#x, __LINE__);
+
+GLuint generateTexture(const char *imagePath) {
+  GLuint texture;
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  // set the texture wrapping/filtering options
+  // (on the currently bound texture object)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                  GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // load and generate the texture
+  int width, height, nrChannels;
+
+  unsigned char *data = stbi_load(imagePath, &width, &height, &nrChannels, 0);
+  if (data) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                 GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  } else {
+    std::cout << "Failed to load texture" << std::endl;
+  }
+  stbi_image_free(data);
+  return texture;
+}
 
 // Returns the location of uniform variable based on it's name
 int findUniformLocation(GLuint pipeline, const GLchar *name) {
@@ -94,7 +96,7 @@ int findUniformLocation(GLuint pipeline, const GLchar *name) {
 // Setup vertex data per mesh
 void meshCreate(Mesh3D *mesh) {
   const std::vector<GLfloat> vertexData{
-      // pos (x,y,z)        color (r,g,b)          uv (u,v) (texture coordinates)
+      // pos (x,y,z)      color (r,g,b)       uv (u,v) (texture coordinates)
       // ---- Front face (dark red) ----
       -0.5f, -0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 0.0f, 0.0f, // vertex 1
       0.5f, -0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 1.0f, 0.0f,  // vertex 2
@@ -220,9 +222,8 @@ void drawMesh(Mesh3D *mesh) {
 
   // setup which graphic pipeline we'll use
   glUseProgram(mesh->mPipeline);
-  generateTexture();
-  glBindTexture(GL_TEXTURE_2D, texture);
   glBindVertexArray(mesh->mVertexArrayObject);
+  glBindTexture(GL_TEXTURE_2D, mesh->mTexture);
   glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
   glUseProgram(0);
 }
@@ -408,8 +409,8 @@ void mainLoop() {
 
     static float rotate = 0.5f;
 
-    meshRotate(&gMesh1, rotate, glm::vec3(1.0f, 0.5f, 0.0f));
-    meshRotate(&gMesh2, -rotate, glm::vec3(1.0f, 0.5f, 0.0f));
+    meshRotate(&gMesh1, rotate, glm::vec3(1.0f, 0.0f, 0.0f));
+    meshRotate(&gMesh2, -rotate, glm::vec3(0.0f, 1.0f, 0.0f));
     drawMesh(&gMesh1);
 
     drawMesh(&gMesh2);
@@ -432,17 +433,20 @@ int main() {
       glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight,
       0.1f, 100.0f);
 
+  gMesh1.mTexture = generateTexture("../assets/wall.jpg");
+  gMesh2.mTexture = generateTexture("../assets/brick.jpg");
+
   meshCreate(&gMesh1);
   meshCreate(&gMesh2);
 
   // Order of transformations matter,
   // try changing for different effects
   // keep input matrix as identity
-  meshTranslate(&gMesh1, 0.0f, 0.0f, -2.0f);
+  meshTranslate(&gMesh1, 0.0f, 0.75f, -4.0f);
   meshScale(&gMesh1, 1.0f, 1.0f, 1.0f);
 
-  meshTranslate(&gMesh2, 0.0f, 0.0f, -4.0f);
-  meshScale(&gMesh2, 2.0f, 2.0f, 1.0f);
+  meshTranslate(&gMesh2, 0.0f, -0.75f, -4.0f);
+  meshScale(&gMesh2, 1.0f, 1.0f, 1.0f);
   createGraphicsPipeline();
 
   // For each our meshes set them to a pipeline
