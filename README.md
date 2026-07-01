@@ -35,7 +35,8 @@ so run it from inside `build/` as the targets above do.
 
 ## Controls
 
-- Arrow keys — move the camera
+- Arrow keys — move forward/back and strafe left/right
+- Space / Left Shift — move up / down
 - Mouse — look around
 - Close the window to quit
 

@@ -20,6 +20,8 @@ public:
   void MoveBackward(float speed);
   void MoveLeft(float speed);
   void MoveRight(float speed);
+  void MoveUp(float speed);
+  void MoveDown(float speed);
 
 private:
   glm::mat4 mProjectionMatrix;

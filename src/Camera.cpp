@@ -41,7 +41,7 @@ void Camera::MouseLook(int mouseX, int mouseY) {
     firstLook = false;
   }
 
-  float sensitivity = 0.5f;
+  float sensitivity = 0.25f;
   // pixels shift gets factored by sensitivity which is later converted to angle
   glm::vec2 mouseDelta = (mOldMousePosition - currentMouse) * sensitivity;
 
@@ -49,7 +49,7 @@ void Camera::MouseLook(int mouseX, int mouseY) {
   mViewDirection =
       glm::rotate(mViewDirection, glm::radians(mouseDelta.x), mUpVector);
 
-  // perpendicular to mUpVector (z-axis) and mViewDirection ( our eye direction)
+  // perpendicular to mUpVector (+y-axis) and mViewDirection ( our eye direction)
   glm::vec3 rightVector = glm::normalize(glm::cross(mViewDirection, mUpVector));
 
   // the pitch (up<->down) which is going to be set if
@@ -79,3 +79,6 @@ void Camera::MoveRight(float speed) {
   glm::vec3 rightVector = glm::cross(mViewDirection, mUpVector);
   mEye += rightVector * speed;
 };
+
+void Camera::MoveUp(float speed) { mEye += mUpVector * speed; };
+void Camera::MoveDown(float speed) { mEye -= mUpVector * speed; };

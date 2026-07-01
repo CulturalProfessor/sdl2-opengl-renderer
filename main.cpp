@@ -400,6 +400,12 @@ void input() {
   if (state[SDL_SCANCODE_RIGHT]) {
     gApp.mCamera.MoveRight(speed);
   }
+  if (state[SDL_SCANCODE_SPACE]) {
+    gApp.mCamera.MoveUp(speed);
+  }
+  if (state[SDL_SCANCODE_LSHIFT]) {
+    gApp.mCamera.MoveDown(speed);
+  }
 }
 
 void mainLoop() {
