@@ -38,7 +38,9 @@ so run it from inside `build/` as the targets above do.
 - Arrow keys — move forward/back and strafe left/right
 - Space / Left Shift — move up / down
 - Mouse — look around
-- Close the window to quit
+- Esc — quit
+
+The app runs in borderless fullscreen at the display's native resolution.
 
 ## Layout
 

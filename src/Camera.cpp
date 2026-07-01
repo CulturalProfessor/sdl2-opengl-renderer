@@ -49,7 +49,8 @@ void Camera::MouseLook(int mouseX, int mouseY) {
   mViewDirection =
       glm::rotate(mViewDirection, glm::radians(mouseDelta.x), mUpVector);
 
-  // perpendicular to mUpVector (+y-axis) and mViewDirection ( our eye direction)
+  // perpendicular to mUpVector (+y-axis) and mViewDirection
+  //  ( our eye direction)
   glm::vec3 rightVector = glm::normalize(glm::cross(mViewDirection, mUpVector));
 
   // the pitch (up<->down) which is going to be set if

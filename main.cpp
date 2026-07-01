@@ -306,9 +306,9 @@ void initializeProgram(App *app) {
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-  gApp.mGraphicsApplicationWindow =
-      SDL_CreateWindow("OPENGL WINDOW", 0, 0, gApp.mScreenWidth,
-                       gApp.mScreenHeight, SDL_WINDOW_OPENGL);
+  gApp.mGraphicsApplicationWindow = SDL_CreateWindow(
+      "OPENGL WINDOW", 0, 0, gApp.mScreenWidth, gApp.mScreenHeight,
+      SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP);
   if (gApp.mGraphicsApplicationWindow == nullptr) {
     std::cout << "SDL_WINDOW_OPENGL not initialized" << std::endl;
     exit(1);
@@ -319,6 +319,11 @@ void initializeProgram(App *app) {
     std::cout << "OpenGL Context not initialized" << std::endl;
     exit(1);
   }
+
+  // Match our width/height to the size the OS actually gave the fullscreen
+  // window, so viewport and aspect ratio adapt to any display automatically.
+  SDL_GL_GetDrawableSize(gApp.mGraphicsApplicationWindow, &gApp.mScreenWidth,
+                         &gApp.mScreenHeight);
 
   if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
     std::cout << "GLAD not initialized" << glGetString(GL_VENDOR) << std::endl;
@@ -406,6 +411,9 @@ void input() {
   if (state[SDL_SCANCODE_LSHIFT]) {
     gApp.mCamera.MoveDown(speed);
   }
+  if (state[SDL_SCANCODE_ESCAPE]) {
+    gApp.mQuit = true;
+  }
 }
 
 void mainLoop() {
@@ -420,7 +428,7 @@ void mainLoop() {
     glEnable(GL_CULL_FACE);
 
     glViewport(0, 0, gApp.mScreenWidth, gApp.mScreenHeight);
-    glClearColor(1.f, 1.f, 0.f, 1.f);
+    glClearColor(0.07f, 0.08f, 0.09f, 1.f);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     static float rotate = 0.5f;
