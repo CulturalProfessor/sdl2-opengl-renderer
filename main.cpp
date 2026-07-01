@@ -17,8 +17,34 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <ostream>
+#include <stb_image.h>
 #include <string>
 #include <vector>
+
+unsigned int texture;
+void generateTexture() {
+  glGenTextures(1, &texture);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  // set the texture wrapping/filtering options (on the currently bound texture
+  // object)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+                  GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // load and generate the texture
+  int width, height, nrChannels;
+  unsigned char *data =
+      stbi_load("../container.jpg", &width, &height, &nrChannels, 0);
+  if (data) {
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
+                 GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+  } else {
+    std::cout << "Failed to load texture" << std::endl;
+  }
+  stbi_image_free(data);
+}
 
 struct App {
   int mScreenWidth = 640;
@@ -68,33 +94,53 @@ int findUniformLocation(GLuint pipeline, const GLchar *name) {
 // Setup vertex data per mesh
 void meshCreate(Mesh3D *mesh) {
   const std::vector<GLfloat> vertexData{
-      -0.5f, -0.5f, 0.5f,  // vertex 1
-      1.0f,  0.0f,  0.0f,  // color of vertex 1
-      0.5f,  -0.5f, 0.5f,  // vertex 2
-      0.0f,  1.0f,  0.0f,  // color of vertex 2
-      -0.5f, 0.5f,  0.5f,  // vertex 3
-      0.0f,  0.0f,  1.0f,  // color of vertex 3
-      0.5f,  0.5f,  0.5f,  // vertex 4
-      0.0f,  1.0f,  0.0f,  // color of vertex 4
-      -0.5f, -0.5f, -0.5f, // vertex 5
-      1.0f,  0.0f,  0.5f,  // color of vertex 5
-      0.5f,  -0.5f, -0.5f, // vertex 6
-      0.5f,  1.0f,  0.0f,  // color of vertex 6
-      -0.5f, 0.5f,  -0.5f, // vertex 7
-      0.5f,  0.0f,  1.0f,  // color of vertex 7
-      0.5f,  0.5f,  -0.5f, // vertex 8
-      0.5f,  1.0f,  0.0f,  // color of vertex 8
+      // pos (x,y,z)        color (r,g,b)          uv (u,v) (texture coordinates)
+      // ---- Front face (dark red) ----
+      -0.5f, -0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 0.0f, 0.0f, // vertex 1
+      0.5f, -0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 1.0f, 0.0f,  // vertex 2
+      0.5f, 0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 1.0f, 1.0f,   // vertex 3
+      -0.5f, 0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 0.0f, 1.0f,  // vertex 4
+
+      // ---- Back face (burnt orange) ----
+      0.5f, -0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 0.0f, 0.0f,  // vertex 5
+      -0.5f, -0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 1.0f, 0.0f, // vertex 6
+      -0.5f, 0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 1.0f, 1.0f,  // vertex 7
+      0.5f, 0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 0.0f, 1.0f,   // vertex 8
+
+      // ---- Right face (dark gold) ----
+      0.5f, -0.5f, 0.5f, 0.72f, 0.58f, 0.04f, 0.0f, 0.0f,  // vertex 9
+      0.5f, -0.5f, -0.5f, 0.72f, 0.58f, 0.04f, 1.0f, 0.0f, // vertex 10
+      0.5f, 0.5f, -0.5f, 0.72f, 0.58f, 0.04f, 1.0f, 1.0f,  // vertex 11
+      0.5f, 0.5f, 0.5f, 0.72f, 0.58f, 0.04f, 0.0f, 1.0f,   // vertex 12
+
+      // ---- Left face (forest green) ----
+      -0.5f, -0.5f, -0.5f, 0.12f, 0.52f, 0.29f, 0.0f, 0.0f, // vertex 13
+      -0.5f, -0.5f, 0.5f, 0.12f, 0.52f, 0.29f, 1.0f, 0.0f,  // vertex 14
+      -0.5f, 0.5f, 0.5f, 0.12f, 0.52f, 0.29f, 1.0f, 1.0f,   // vertex 15
+      -0.5f, 0.5f, -0.5f, 0.12f, 0.52f, 0.29f, 0.0f, 1.0f,  // vertex 16
+
+      // ---- Top face (deep blue) ----
+      -0.5f, 0.5f, 0.5f, 0.12f, 0.38f, 0.55f, 0.0f, 0.0f,  // vertex 17
+      0.5f, 0.5f, 0.5f, 0.12f, 0.38f, 0.55f, 1.0f, 0.0f,   // vertex 18
+      0.5f, 0.5f, -0.5f, 0.12f, 0.38f, 0.55f, 1.0f, 1.0f,  // vertex 19
+      -0.5f, 0.5f, -0.5f, 0.12f, 0.38f, 0.55f, 0.0f, 1.0f, // vertex 20
+
+      // ---- Bottom face (dark purple) ----
+      -0.5f, -0.5f, -0.5f, 0.42f, 0.20f, 0.51f, 0.0f, 0.0f, // vertex 21
+      0.5f, -0.5f, -0.5f, 0.42f, 0.20f, 0.51f, 1.0f, 0.0f,  // vertex 22
+      0.5f, -0.5f, 0.5f, 0.42f, 0.20f, 0.51f, 1.0f, 1.0f,   // vertex 23
+      -0.5f, -0.5f, 0.5f, 0.42f, 0.20f, 0.51f, 0.0f, 1.0f,  // vertex 24
   };
 
   // winding order, take counter clockwise of each face as
   // seen in front of that face
   const std::vector<GLuint> indexBufferData{
-      2, 0, 1, 1, 3, 2, // front face
-      6, 2, 3, 3, 7, 6, // top face
-      3, 1, 5, 5, 7, 3, // right face
-      7, 5, 4, 4, 6, 7, // back face
-      0, 4, 5, 5, 1, 0, // bottom face
-      6, 4, 0, 0, 2, 6  // left face
+      0,  1,  2,  0,  2,  3,  // front
+      4,  5,  6,  4,  6,  7,  // back
+      8,  9,  10, 8,  10, 11, // right
+      12, 13, 14, 12, 14, 15, // left
+      16, 17, 18, 16, 18, 19, // top
+      20, 21, 22, 20, 22, 23, // bottom
   };
   glGenVertexArrays(1, &mesh->mVertexArrayObject);
   glBindVertexArray(mesh->mVertexArrayObject);
@@ -110,12 +156,17 @@ void meshCreate(Mesh3D *mesh) {
                indexBufferData.data(), GL_STATIC_DRAW);
 
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 6, (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 8, (void *)0);
 
   // Color Information
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 6,
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8,
                         (GLvoid *)(sizeof(GLfloat) * 3));
+
+  // Texture information
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
+                        (void *)(6 * sizeof(float)));
 
   glBindVertexArray(0);
   glDisableVertexAttribArray(0);
@@ -169,6 +220,8 @@ void drawMesh(Mesh3D *mesh) {
 
   // setup which graphic pipeline we'll use
   glUseProgram(mesh->mPipeline);
+  generateTexture();
+  glBindTexture(GL_TEXTURE_2D, texture);
   glBindVertexArray(mesh->mVertexArrayObject);
   glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
   glUseProgram(0);

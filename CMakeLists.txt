@@ -15,7 +15,7 @@ if(NOT SDL2_FOUND)
 endif()
 
 ## Remember to include source files here
-add_executable(main main.cpp src/glad.c src/Camera.cpp)
+add_executable(main main.cpp src/glad.c src/Camera.cpp src/stb_image.cpp)
 
 # The project mixes <SDL2/SDL.h> and <SDL_events.h> style includes, so expose
 # both the parent dir and the SDL2 subdir on the include path.
