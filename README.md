@@ -1,5 +1,7 @@
 # sdl2-opengl-renderer
 
+![Textured, diffuse-lit cubes with a point light](assets/screenshot.png)
+
 A small real-time renderer built with SDL2 and modern OpenGL (4.1 core profile),
 written in C++17. A learning/sandbox project for experimenting with graphics
 pipeline concepts: shaders, textures, depth testing, free-look camera etc.
