@@ -66,8 +66,7 @@ GLuint generateTexture(const char *imagePath) {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   // load and generate the texture
   int width, height, nrChannels, format = 1;
@@ -83,8 +82,7 @@ GLuint generateTexture(const char *imagePath) {
   }
 
   if (data) {
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format,
-                 GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
   } else {
     std::cout << "Failed to load texture" << std::endl;
@@ -93,13 +91,13 @@ GLuint generateTexture(const char *imagePath) {
   return texture;
 }
 
-// Returns the location of uniform variable based on it's name
+// Returns the location of uniform variable based on it's
+// name
 int findUniformLocation(GLuint pipeline, const GLchar *name) {
   GLint location = glGetUniformLocation(pipeline, name);
 
   if (location < 0) {
-    std::cerr << "couldn't find location of " << name << " maybe spelling error"
-              << std::endl;
+    std::cerr << "couldn't find location of " << name << " maybe spelling error" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -109,42 +107,43 @@ int findUniformLocation(GLuint pipeline, const GLchar *name) {
 // Setup vertex data per mesh
 void meshCreate(Mesh3D *mesh) {
   const std::vector<GLfloat> vertexData{
-      // pos (x,y,z)      color (r,g,b)       uv (u,v) (texture coordinates)
-      // ---- Front face (dark red) ----
-      -0.5f, -0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 0.0f, 0.0f, // vertex 1
-      0.5f, -0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 1.0f, 0.0f,  // vertex 2
-      0.5f, 0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 1.0f, 1.0f,   // vertex 3
-      -0.5f, 0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 0.0f, 1.0f,  // vertex 4
+      // pos (x,y,z)      color (r,g,b)      uv (u,v) normal
+      // (nx,ny,nz)
+      // ---- Front face (dark red), normal +Z ----
+      -0.5f, -0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, // v1
+      0.5f, -0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // v2
+      0.5f, 0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,   // v3
+      -0.5f, 0.5f, 0.5f, 0.75f, 0.22f, 0.17f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,  // v4
 
-      // ---- Back face (burnt orange) ----
-      0.5f, -0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 0.0f, 0.0f,  // vertex 5
-      -0.5f, -0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 1.0f, 0.0f, // vertex 6
-      -0.5f, 0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 1.0f, 1.0f,  // vertex 7
-      0.5f, 0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 0.0f, 1.0f,   // vertex 8
+      // ---- Back face (burnt orange), normal -Z ----
+      0.5f, -0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,  // v5
+      -0.5f, -0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, // v6
+      -0.5f, 0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 1.0f, 1.0f, 0.0f, 0.0f, -1.0f,  // v7
+      0.5f, 0.5f, -0.5f, 0.83f, 0.33f, 0.00f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f,   // v8
 
-      // ---- Right face (dark gold) ----
-      0.5f, -0.5f, 0.5f, 0.72f, 0.58f, 0.04f, 0.0f, 0.0f,  // vertex 9
-      0.5f, -0.5f, -0.5f, 0.72f, 0.58f, 0.04f, 1.0f, 0.0f, // vertex 10
-      0.5f, 0.5f, -0.5f, 0.72f, 0.58f, 0.04f, 1.0f, 1.0f,  // vertex 11
-      0.5f, 0.5f, 0.5f, 0.72f, 0.58f, 0.04f, 0.0f, 1.0f,   // vertex 12
+      // ---- Right face (dark gold), normal +X ----
+      0.5f, -0.5f, 0.5f, 0.72f, 0.58f, 0.04f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,  // v9
+      0.5f, -0.5f, -0.5f, 0.72f, 0.58f, 0.04f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, // v10
+      0.5f, 0.5f, -0.5f, 0.72f, 0.58f, 0.04f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,  // v11
+      0.5f, 0.5f, 0.5f, 0.72f, 0.58f, 0.04f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f,   // v12
 
-      // ---- Left face (forest green) ----
-      -0.5f, -0.5f, -0.5f, 0.12f, 0.52f, 0.29f, 0.0f, 0.0f, // vertex 13
-      -0.5f, -0.5f, 0.5f, 0.12f, 0.52f, 0.29f, 1.0f, 0.0f,  // vertex 14
-      -0.5f, 0.5f, 0.5f, 0.12f, 0.52f, 0.29f, 1.0f, 1.0f,   // vertex 15
-      -0.5f, 0.5f, -0.5f, 0.12f, 0.52f, 0.29f, 0.0f, 1.0f,  // vertex 16
+      // ---- Left face (forest green), normal -X ----
+      -0.5f, -0.5f, -0.5f, 0.12f, 0.52f, 0.29f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // v13
+      -0.5f, -0.5f, 0.5f, 0.12f, 0.52f, 0.29f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f,  // v14
+      -0.5f, 0.5f, 0.5f, 0.12f, 0.52f, 0.29f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f,   // v15
+      -0.5f, 0.5f, -0.5f, 0.12f, 0.52f, 0.29f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f,  // v16
 
-      // ---- Top face (deep blue) ----
-      -0.5f, 0.5f, 0.5f, 0.12f, 0.38f, 0.55f, 0.0f, 0.0f,  // vertex 17
-      0.5f, 0.5f, 0.5f, 0.12f, 0.38f, 0.55f, 1.0f, 0.0f,   // vertex 18
-      0.5f, 0.5f, -0.5f, 0.12f, 0.38f, 0.55f, 1.0f, 1.0f,  // vertex 19
-      -0.5f, 0.5f, -0.5f, 0.12f, 0.38f, 0.55f, 0.0f, 1.0f, // vertex 20
+      // ---- Top face (deep blue), normal +Y ----
+      -0.5f, 0.5f, 0.5f, 0.12f, 0.38f, 0.55f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // v17
+      0.5f, 0.5f, 0.5f, 0.12f, 0.38f, 0.55f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,   // v18
+      0.5f, 0.5f, -0.5f, 0.12f, 0.38f, 0.55f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // v19
+      -0.5f, 0.5f, -0.5f, 0.12f, 0.38f, 0.55f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // v20
 
-      // ---- Bottom face (dark purple) ----
-      -0.5f, -0.5f, -0.5f, 0.42f, 0.20f, 0.51f, 0.0f, 0.0f, // vertex 21
-      0.5f, -0.5f, -0.5f, 0.42f, 0.20f, 0.51f, 1.0f, 0.0f,  // vertex 22
-      0.5f, -0.5f, 0.5f, 0.42f, 0.20f, 0.51f, 1.0f, 1.0f,   // vertex 23
-      -0.5f, -0.5f, 0.5f, 0.42f, 0.20f, 0.51f, 0.0f, 1.0f,  // vertex 24
+      // ---- Bottom face (dark purple), normal -Y ----
+      -0.5f, -0.5f, -0.5f, 0.42f, 0.20f, 0.51f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, // v21
+      0.5f, -0.5f, -0.5f, 0.42f, 0.20f, 0.51f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f,  // v22
+      0.5f, -0.5f, 0.5f, 0.42f, 0.20f, 0.51f, 1.0f, 1.0f, 0.0f, -1.0f, 0.0f,   // v23
+      -0.5f, -0.5f, 0.5f, 0.42f, 0.20f, 0.51f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f,  // v24
   };
 
   // winding order, take counter clockwise of each face as
@@ -161,27 +160,28 @@ void meshCreate(Mesh3D *mesh) {
   glBindVertexArray(mesh->mVertexArrayObject);
   glGenBuffers(1, &mesh->mVertexBufferObject);
   glBindBuffer(GL_ARRAY_BUFFER, mesh->mVertexBufferObject);
-  glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(GLfloat),
-               vertexData.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(GLfloat), vertexData.data(), GL_STATIC_DRAW);
 
   // index buffer object
   glGenBuffers(1, &mesh->mIndexBufferObject);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->mIndexBufferObject);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferData.size() * sizeof(GLuint),
-               indexBufferData.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferData.size() * sizeof(GLuint), indexBufferData.data(),
+               GL_STATIC_DRAW);
 
+  glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 11, (void *)0);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(GLfloat) * 8, (void *)0);
 
   // Color Information
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 11, (GLvoid *)(sizeof(GLfloat) * 3));
   glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 8,
-                        (GLvoid *)(sizeof(GLfloat) * 3));
 
   // Texture information
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void *)(6 * sizeof(float)));
   glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                        (void *)(6 * sizeof(float)));
+
+  // Normal vector information
+  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void *)(8 * sizeof(float)));
+  glEnableVertexAttribArray(3);
 
   glBindVertexArray(0);
   glDisableVertexAttribArray(0);
@@ -196,14 +196,12 @@ void meshDelete(Mesh3D *mesh) {
 /*
 Needs to set pipeline before we draw
 */
-void meshSetPipeline(Mesh3D *mesh, GLuint pipeline) {
-  mesh->mPipeline = pipeline;
-}
+void meshSetPipeline(Mesh3D *mesh, GLuint pipeline) { mesh->mPipeline = pipeline; }
 
 /**
  * Note : We per mesh choose the graphics pipeline we'll use
- * Generally not efficient to change state(pipelines) frequently,
- * we're doing this for flexibilty
+ * Generally not efficient to change state(pipelines)
+ * frequently, we're doing this for flexibilty
  */
 
 void drawMesh(Mesh3D *mesh) {
@@ -213,13 +211,12 @@ void drawMesh(Mesh3D *mesh) {
 
   glUseProgram(mesh->mPipeline);
 
-  // note we oftem combine view and model matrix to send in one uniform
+  // note we oftem combine view and model matrix to send in
+  // one uniform
   glm::mat4 view = gApp.mCamera.GetViewMatrix();
 
-  GLint u_ModelMatrixLocation =
-      findUniformLocation(mesh->mPipeline, "u_ModelMatrix");
-  glUniformMatrix4fv(u_ModelMatrixLocation, 1, false,
-                     &mesh->mTransform.mModelMatrix[0][0]);
+  GLint u_ModelMatrixLocation = findUniformLocation(mesh->mPipeline, "u_ModelMatrix");
+  glUniformMatrix4fv(u_ModelMatrixLocation, 1, false, &mesh->mTransform.mModelMatrix[0][0]);
 
   GLint u_ViewLocation = findUniformLocation(mesh->mPipeline, "u_ViewMatrix");
   glUniformMatrix4fv(u_ViewLocation, 1, false, &view[0][0]);
@@ -228,15 +225,17 @@ void drawMesh(Mesh3D *mesh) {
   glm::mat4 perspective = gApp.mCamera.GetProjectionMatrix();
 
   // Retrieve our location of our perspective matrix uniform
-  GLint u_ProjectionLocation =
-      findUniformLocation(mesh->mPipeline, "u_Projection");
+  GLint u_ProjectionLocation = findUniformLocation(mesh->mPipeline, "u_Projection");
   glUniformMatrix4fv(u_ProjectionLocation, 1, false, &perspective[0][0]);
 
-  // using glGetUniformLocation() since lightColor only exists in
-  // fragment shader and to avoid fatal error while looking it up
-  GLint u_LightColorLocation =
-      glGetUniformLocation(mesh->mPipeline, "lightColor");
+  // using glGetUniformLocation() since lightColor only
+  // exists in fragment shader and to avoid fatal error
+  // while looking it up
+  GLint u_LightColorLocation = glGetUniformLocation(mesh->mPipeline, "lightColor");
   glUniform3f(u_LightColorLocation, 1.0f, 1.0f, 1.0f);
+
+  GLint uLightPositionLocation = glGetUniformLocation(mesh->mPipeline, "lightPos");
+  glUniform3f(uLightPositionLocation, lightPos.x, lightPos.y, lightPos.z);
 
   // setup which graphic pipeline we'll use
   glUseProgram(mesh->mPipeline);
@@ -248,20 +247,17 @@ void drawMesh(Mesh3D *mesh) {
 
 // translates a mesh, updates it's model matrix
 void meshTranslate(Mesh3D *mesh, float x, float y, float z) {
-  mesh->mTransform.mModelMatrix =
-      glm::translate(mesh->mTransform.mModelMatrix, glm::vec3(x, y, z));
+  mesh->mTransform.mModelMatrix = glm::translate(mesh->mTransform.mModelMatrix, glm::vec3(x, y, z));
 }
 
 // rotates a mesh about a axis (a vector)
 void meshRotate(Mesh3D *mesh, float yAngle, glm::vec3 axis) {
-  mesh->mTransform.mModelMatrix =
-      glm::rotate(mesh->mTransform.mModelMatrix, glm::radians(yAngle), axis);
+  mesh->mTransform.mModelMatrix = glm::rotate(mesh->mTransform.mModelMatrix, glm::radians(yAngle), axis);
 }
 
 // scales a mesh in non-uniform way
 void meshScale(Mesh3D *mesh, float x, float y, float z) {
-  mesh->mTransform.mModelMatrix =
-      glm::scale(mesh->mTransform.mModelMatrix, glm::vec3(x, y, z));
+  mesh->mTransform.mModelMatrix = glm::scale(mesh->mTransform.mModelMatrix, glm::vec3(x, y, z));
 }
 
 static void GLClearAllErrors() {
@@ -273,8 +269,7 @@ static bool GLCheckErrorStatus(const char *function, int line) {
   while (GLenum error = glGetError()) {
     // Check the hexcode of error number on
     // https://wikis.khronos.org/opengl/OpenGL_Error
-    std::cout << "OpenGL Error:" << error << "\tLine:" << line
-              << "\tFunction:" << function << std::endl;
+    std::cout << "OpenGL Error:" << error << "\tLine:" << line << "\tFunction:" << function << std::endl;
     return true;
   }
   return false;
@@ -298,8 +293,7 @@ void getOpenGLVersion() {
   std::cout << "OpenGL" << glGetString(GL_VENDOR) << std::endl;
   std::cout << "OpenGL" << glGetString(GL_RENDERER) << std::endl;
   std::cout << "OpenGL" << glGetString(GL_VERSION) << std::endl;
-  std::cout << "OpenGL" << glGetString(GL_SHADING_LANGUAGE_VERSION)
-            << std::endl;
+  std::cout << "OpenGL" << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 }
 
 void initializeProgram(App *app) {
@@ -314,9 +308,8 @@ void initializeProgram(App *app) {
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-  gApp.mGraphicsApplicationWindow = SDL_CreateWindow(
-      "OPENGL WINDOW", 0, 0, gApp.mScreenWidth, gApp.mScreenHeight,
-      SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP);
+  gApp.mGraphicsApplicationWindow = SDL_CreateWindow("OPENGL WINDOW", 0, 0, gApp.mScreenWidth, gApp.mScreenHeight,
+                                                     SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP);
   if (gApp.mGraphicsApplicationWindow == nullptr) {
     std::cout << "SDL_WINDOW_OPENGL not initialized" << std::endl;
     exit(1);
@@ -328,10 +321,10 @@ void initializeProgram(App *app) {
     exit(1);
   }
 
-  // Match our width/height to the size the OS actually gave the fullscreen
-  // window, so viewport and aspect ratio adapt to any display automatically.
-  SDL_GL_GetDrawableSize(gApp.mGraphicsApplicationWindow, &gApp.mScreenWidth,
-                         &gApp.mScreenHeight);
+  // Match our width/height to the size the OS actually gave
+  // the fullscreen window, so viewport and aspect ratio
+  // adapt to any display automatically.
+  SDL_GL_GetDrawableSize(gApp.mGraphicsApplicationWindow, &gApp.mScreenWidth, &gApp.mScreenHeight);
 
   if (!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
     std::cout << "GLAD not initialized" << glGetString(GL_VENDOR) << std::endl;
@@ -363,12 +356,10 @@ GLuint compileShader(GLuint type, const std::string &source) {
   return shaderObject;
 }
 
-GLuint createShaderProgram(const std::string &vertexShaderSource,
-                           const std::string &fragmentShaderSource) {
+GLuint createShaderProgram(const std::string &vertexShaderSource, const std::string &fragmentShaderSource) {
   GLuint programObject = glCreateProgram();
   GLuint myVertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
-  GLuint myFragmentShader =
-      compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+  GLuint myFragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
 
   glAttachShader(programObject, myVertexShader);
   glAttachShader(programObject, myFragmentShader);
@@ -395,10 +386,8 @@ void createGraphicsPipeline() {
   std::string fragmentShaderSource = loadShaderAsString("../shaders/frag.glsl");
   std::string lightShaderSource = loadShaderAsString("../shaders/light.glsl");
 
-  gApp.mGraphicsPipelineShaderProgram =
-      createShaderProgram(vertexShaderSource, fragmentShaderSource);
-  gApp.mLightShaderProgram =
-      createShaderProgram(vertexShaderSource, lightShaderSource);
+  gApp.mGraphicsPipelineShaderProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
+  gApp.mLightShaderProgram = createShaderProgram(vertexShaderSource, lightShaderSource);
 }
 
 void input() {
@@ -448,8 +437,7 @@ void input() {
 }
 
 void mainLoop() {
-  SDL_WarpMouseInWindow(gApp.mGraphicsApplicationWindow, gApp.mScreenWidth / 2,
-                        gApp.mScreenHeight / 2);
+  SDL_WarpMouseInWindow(gApp.mGraphicsApplicationWindow, gApp.mScreenWidth / 2, gApp.mScreenHeight / 2);
   SDL_SetRelativeMouseMode(SDL_TRUE);
 
   while (!gApp.mQuit) {
@@ -486,9 +474,8 @@ void cleanUp() {
 
 int main() {
   initializeProgram(&gApp);
-  gApp.mCamera.SetProjectionMatrix(
-      glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight,
-      0.1f, 100.0f);
+  gApp.mCamera.SetProjectionMatrix(glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight, 0.1f,
+                                   100.0f);
 
   gMesh1.mTexture = generateTexture("../assets/brick.jpg");
   gMesh2.mTexture = generateTexture("../assets/wall.jpg");
@@ -502,15 +489,16 @@ int main() {
   meshCreate(&gMeshLight);
 
   meshTranslate(&gMeshLight, lightPos.x, lightPos.y, lightPos.z);
-  meshScale(&gMeshLight, 0.2f, 0.2f, 0.2f); // a small marker cube
+  meshScale(&gMeshLight, 0.2f, 0.2f,
+            0.2f); // a small marker cube
 
   // Order of transformations matter,
   // try changing for different effects
   // keep input matrix as identity
-  meshTranslate(&gMesh1, 0.0f, 0.75f, -4.0f);
+  meshTranslate(&gMesh1, 0.75f, 0.0f, -4.0f);
   meshScale(&gMesh1, 1.0f, 1.0f, 1.0f);
 
-  meshTranslate(&gMesh2, 0.0f, -0.75f, -4.0f);
+  meshTranslate(&gMesh2, -0.75f, 0.0f, -4.0f);
   meshScale(&gMesh2, 1.0f, 1.0f, 1.0f);
   createGraphicsPipeline();
 

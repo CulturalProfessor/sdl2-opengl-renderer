@@ -20,19 +20,17 @@ Camera::Camera() {
   mUpVector = glm::vec3(0.0f, 1.0f, 0.0f);
 }
 
-glm::mat4 Camera::GetViewMatrix() const {
-  return glm::lookAt(mEye, mEye + mViewDirection, mUpVector);
-}
+glm::mat4 Camera::GetViewMatrix() const { return glm::lookAt(mEye, mEye + mViewDirection, mUpVector); }
 
-void Camera::SetProjectionMatrix(float fovy, float aspect, float near,
-                                 float far) {
+void Camera::SetProjectionMatrix(float fovy, float aspect, float near, float far) {
   mProjectionMatrix = glm::perspective(fovy, aspect, near, far);
 }
 
 glm::mat4 Camera::GetProjectionMatrix() const { return mProjectionMatrix; }
 
 void Camera::MouseLook(int mouseX, int mouseY) {
-  // std::cout << "Mouse :" << mouseX << "," << mouseY << std::endl;
+  // std::cout << "Mouse :" << mouseX << "," << mouseY <<
+  // std::endl;
   glm::vec2 currentMouse = glm::vec2(mouseX, mouseY);
 
   static bool firstLook = true;
@@ -42,12 +40,12 @@ void Camera::MouseLook(int mouseX, int mouseY) {
   }
 
   float sensitivity = 0.25f;
-  // pixels shift gets factored by sensitivity which is later converted to angle
+  // pixels shift gets factored by sensitivity which is
+  // later converted to angle
   glm::vec2 mouseDelta = (mOldMousePosition - currentMouse) * sensitivity;
 
   // yaw (right<->left)
-  mViewDirection =
-      glm::rotate(mViewDirection, glm::radians(mouseDelta.x), mUpVector);
+  mViewDirection = glm::rotate(mViewDirection, glm::radians(mouseDelta.x), mUpVector);
 
   // perpendicular to mUpVector (+y-axis) and mViewDirection
   //  ( our eye direction)
@@ -55,8 +53,7 @@ void Camera::MouseLook(int mouseX, int mouseY) {
 
   // the pitch (up<->down) which is going to be set if
   // within limits (not parallel mUpVector)
-  glm::vec3 pitchedDirection =
-      glm::rotate(mViewDirection, glm::radians(mouseDelta.y), rightVector);
+  glm::vec3 pitchedDirection = glm::rotate(mViewDirection, glm::radians(mouseDelta.y), rightVector);
 
   // verify if pitch is not parallel to mUpVector
   // (leaving around ~8 degree margin) then set pitch
