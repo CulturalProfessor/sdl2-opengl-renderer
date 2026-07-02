@@ -20,8 +20,12 @@ void main()
 
    float ambientStrength = 0.1f;
    vec3 ambient = ambientStrength*lightColor;
-   vec3 result=(ambient+diffuse)*v_vertexColors;
-
+   vec3 texColor = texture(ourTexture,TexCoord).rgb;
+   
+   // for color
+   // vec3 result=(ambient+diffuse)*v_vertexColors;
+   
+   // for texture
+   vec3 result = (ambient + diffuse) * texColor; 
    FragColor = vec4(result,1.0);
-   // FragColor = texture(ourTexture,TexCoord);
 }
