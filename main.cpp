@@ -28,6 +28,7 @@ struct App {
   SDL_GLContext mOpenGLContext = nullptr;
   bool mQuit = false;
   GLuint mGraphicsPipelineShaderProgram = 0;
+  GLuint mLightShaderProgram = 0;
   // Create a single global camera
   Camera mCamera;
 };
@@ -48,6 +49,8 @@ struct Mesh3D {
 App gApp;
 Mesh3D gMesh1;
 Mesh3D gMesh2;
+Mesh3D gMeshLight;
+glm::vec3 lightPos(0.0f, 2.0f, -4.0f);
 
 // #define GLCheck(x)    \
 //   GLClearAllErrors(); \
@@ -95,7 +98,7 @@ int findUniformLocation(GLuint pipeline, const GLchar *name) {
   GLint location = glGetUniformLocation(pipeline, name);
 
   if (location < 0) {
-    std::cerr << "couldn't find location of" << name << "maybe spelling error"
+    std::cerr << "couldn't find location of " << name << " maybe spelling error"
               << std::endl;
     exit(EXIT_FAILURE);
   }
@@ -214,12 +217,11 @@ void drawMesh(Mesh3D *mesh) {
   glm::mat4 view = gApp.mCamera.GetViewMatrix();
 
   GLint u_ModelMatrixLocation =
-      findUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ModelMatrix");
+      findUniformLocation(mesh->mPipeline, "u_ModelMatrix");
   glUniformMatrix4fv(u_ModelMatrixLocation, 1, false,
                      &mesh->mTransform.mModelMatrix[0][0]);
 
-  GLint u_ViewLocation =
-      findUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_ViewMatrix");
+  GLint u_ViewLocation = findUniformLocation(mesh->mPipeline, "u_ViewMatrix");
   glUniformMatrix4fv(u_ViewLocation, 1, false, &view[0][0]);
 
   // Projection Matrix (in perspective)
@@ -227,8 +229,14 @@ void drawMesh(Mesh3D *mesh) {
 
   // Retrieve our location of our perspective matrix uniform
   GLint u_ProjectionLocation =
-      findUniformLocation(gApp.mGraphicsPipelineShaderProgram, "u_Projection");
+      findUniformLocation(mesh->mPipeline, "u_Projection");
   glUniformMatrix4fv(u_ProjectionLocation, 1, false, &perspective[0][0]);
+
+  // using glGetUniformLocation() since lightColor only exists in
+  // fragment shader and to avoid fatal error while looking it up
+  GLint u_LightColorLocation =
+      glGetUniformLocation(mesh->mPipeline, "lightColor");
+  glUniform3f(u_LightColorLocation, 1.0f, 1.0f, 1.0f);
 
   // setup which graphic pipeline we'll use
   glUseProgram(mesh->mPipeline);
@@ -342,6 +350,16 @@ GLuint compileShader(GLuint type, const std::string &source) {
   const char *src = source.c_str();
   glShaderSource(shaderObject, 1, &src, nullptr);
   glCompileShader(shaderObject);
+
+  GLint ok = 0;
+  // check shaders compile result
+  glGetShaderiv(shaderObject, GL_COMPILE_STATUS, &ok);
+  if (!ok) {
+    char log[512];
+    glGetShaderInfoLog(shaderObject, 512, nullptr, log);
+    std::cout << "Shader compile error: " << log << std::endl;
+  }
+
   return shaderObject;
 }
 
@@ -357,6 +375,15 @@ GLuint createShaderProgram(const std::string &vertexShaderSource,
 
   glLinkProgram(programObject);
 
+  GLint ok = 0;
+  // check the link result
+  glGetProgramiv(programObject, GL_LINK_STATUS, &ok);
+  if (!ok) {
+    char log[512];
+    glGetProgramInfoLog(programObject, 512, nullptr, log);
+    std::cout << "Shader link error: " << log << std::endl;
+  }
+
   glValidateProgram(programObject);
 
   return programObject;
@@ -366,8 +393,12 @@ void createGraphicsPipeline() {
   // path should be according to exe's location
   std::string vertexShaderSource = loadShaderAsString("../shaders/vert.glsl");
   std::string fragmentShaderSource = loadShaderAsString("../shaders/frag.glsl");
+  std::string lightShaderSource = loadShaderAsString("../shaders/light.glsl");
+
   gApp.mGraphicsPipelineShaderProgram =
       createShaderProgram(vertexShaderSource, fragmentShaderSource);
+  gApp.mLightShaderProgram =
+      createShaderProgram(vertexShaderSource, lightShaderSource);
 }
 
 void input() {
@@ -435,10 +466,11 @@ void mainLoop() {
 
     meshRotate(&gMesh1, rotate, glm::vec3(1.0f, 0.0f, 0.0f));
     meshRotate(&gMesh2, -rotate, glm::vec3(0.0f, 1.0f, 0.0f));
-    drawMesh(&gMesh1);
 
+    drawMesh(&gMeshLight);
+    drawMesh(&gMesh1);
     drawMesh(&gMesh2);
-    // meshCreate();
+
     SDL_GL_SwapWindow(gApp.mGraphicsApplicationWindow);
   }
 }
@@ -447,6 +479,7 @@ void cleanUp() {
   gApp.mGraphicsApplicationWindow = nullptr;
   meshDelete(&gMesh1);
   meshDelete(&gMesh2);
+  meshDelete(&gMeshLight);
   glDeleteProgram(gApp.mGraphicsPipelineShaderProgram);
   SDL_Quit();
 }
@@ -460,8 +493,16 @@ int main() {
   gMesh1.mTexture = generateTexture("../assets/brick.jpg");
   gMesh2.mTexture = generateTexture("../assets/wall.jpg");
 
+  glm::mat4 model = glm::mat4(1.0f);
+  model = glm::translate(model, lightPos);
+  model = glm::scale(model, glm::vec3(0.2f));
+
   meshCreate(&gMesh1);
   meshCreate(&gMesh2);
+  meshCreate(&gMeshLight);
+
+  meshTranslate(&gMeshLight, lightPos.x, lightPos.y, lightPos.z);
+  meshScale(&gMeshLight, 0.2f, 0.2f, 0.2f); // a small marker cube
 
   // Order of transformations matter,
   // try changing for different effects
@@ -474,6 +515,7 @@ int main() {
   createGraphicsPipeline();
 
   // For each our meshes set them to a pipeline
+  meshSetPipeline(&gMeshLight, gApp.mLightShaderProgram);
   meshSetPipeline(&gMesh1, gApp.mGraphicsPipelineShaderProgram);
   meshSetPipeline(&gMesh2, gApp.mGraphicsPipelineShaderProgram);
   mainLoop();

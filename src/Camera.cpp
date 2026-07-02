@@ -10,8 +10,8 @@
 #include "glm/gtx/rotate_vector.hpp"
 
 Camera::Camera() {
-  // Assume we are at origin
-  mEye = glm::vec3(0.0f, 0.0f, 0.0f);
+  // Assume we are little away from origin
+  mEye = glm::vec3(0.0f, 0.0f, 2.0f);
   // Assume we are looking out into the world
   // Note: This is along '-z',because otherwise
   // we'd be looking behind us.
