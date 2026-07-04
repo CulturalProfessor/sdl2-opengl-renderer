@@ -44,6 +44,7 @@ struct Mesh3D {
   GLuint mIndexBufferObject = 0;
   Shader *mShader = nullptr;
   GLuint mTexture;
+  GLuint mSpecularMap;
   Transform mTransform;
 };
 
@@ -211,13 +212,17 @@ void drawMesh(Mesh3D *mesh) {
   sh.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
   sh.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
-  sh.setVec3("material.ambient", 1.0f, 1.0f, 1.0f);
-  sh.setVec3("material.diffuse", 1.0f, 1.0f, 1.0f);
-  sh.setVec3("material.specular", 0.1f, 0.1f, 0.1f);
+  sh.setInt("material.specular", 1);
   sh.setFloat("material.shininess", 8.0f);
-
-  glBindVertexArray(mesh->mVertexArrayObject);
+  
+  // Diffuse map (normal texture)
+  glad_glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, mesh->mTexture);
+  // Specular map (b/w texture)
+  glad_glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, mesh->mSpecularMap);
+  
+  glBindVertexArray(mesh->mVertexArrayObject);
   glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
 
@@ -375,8 +380,10 @@ int main() {
   gApp.mCamera.SetProjectionMatrix(glm::radians(45.0f), (float)gApp.mScreenWidth / (float)gApp.mScreenHeight, 0.1f,
                                    100.0f);
 
-  gMesh1.mTexture = generateTexture("../assets/brick.jpg");
-  gMesh2.mTexture = generateTexture("../assets/wall.jpg");
+  gMesh1.mTexture = generateTexture("../assets/container2.png");
+  gMesh2.mTexture = generateTexture("../assets/container2.png");
+  gMesh1.mSpecularMap = generateTexture("../assets/container2_specular.png");
+  gMesh2.mSpecularMap = generateTexture("../assets/container2_specular.png");
 
   meshCreate(&gMesh1);
   meshCreate(&gMesh2);
