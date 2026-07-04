@@ -14,6 +14,7 @@ public:
   glm::mat4 GetProjectionMatrix() const;
   // The main view matrix we'll create and return
   glm::mat4 GetViewMatrix() const;
+  glm::vec3 GetEyePosition() const;
 
   void MouseLook(int mouseX, int mouseY);
   void MoveForward(float speed);

@@ -237,6 +237,10 @@ void drawMesh(Mesh3D *mesh) {
   GLint uLightPositionLocation = glGetUniformLocation(mesh->mPipeline, "lightPos");
   glUniform3f(uLightPositionLocation, lightPos.x, lightPos.y, lightPos.z);
 
+  GLint uViewPositionLocation = glGetUniformLocation(mesh->mPipeline, "viewPos");
+  glm::vec3 eye = gApp.mCamera.GetEyePosition();
+  glUniform3f(uViewPositionLocation, eye.x, eye.y, eye.z);
+
   // setup which graphic pipeline we'll use
   glUseProgram(mesh->mPipeline);
   glBindVertexArray(mesh->mVertexArrayObject);
@@ -452,8 +456,8 @@ void mainLoop() {
 
     static float rotate = 0.5f;
 
-    meshRotate(&gMesh1, rotate, glm::vec3(1.0f, 0.0f, 0.0f));
-    meshRotate(&gMesh2, -rotate, glm::vec3(0.0f, 1.0f, 0.0f));
+    meshRotate(&gMesh1, rotate, glm::vec3(1.0f, 0.5f, 0.0f));
+    meshRotate(&gMesh2, -rotate, glm::vec3(0.5f, 1.0f, 0.0f));
 
     drawMesh(&gMeshLight);
     drawMesh(&gMesh1);
@@ -495,10 +499,10 @@ int main() {
   // Order of transformations matter,
   // try changing for different effects
   // keep input matrix as identity
-  meshTranslate(&gMesh1, 0.75f, 0.0f, -4.0f);
+  meshTranslate(&gMesh1, 1.0f, 0.0f, -4.0f);
   meshScale(&gMesh1, 1.0f, 1.0f, 1.0f);
 
-  meshTranslate(&gMesh2, -0.75f, 0.0f, -4.0f);
+  meshTranslate(&gMesh2, -1.0f, 0.0f, -4.0f);
   meshScale(&gMesh2, 1.0f, 1.0f, 1.0f);
   createGraphicsPipeline();
 

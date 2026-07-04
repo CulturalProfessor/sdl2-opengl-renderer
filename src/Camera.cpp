@@ -19,6 +19,7 @@ Camera::Camera() {
   // Assume we start on a perfect plane
   mUpVector = glm::vec3(0.0f, 1.0f, 0.0f);
 }
+glm::vec3 Camera::GetEyePosition() const { return mEye; }
 
 glm::mat4 Camera::GetViewMatrix() const { return glm::lookAt(mEye, mEye + mViewDirection, mUpVector); }
 
