@@ -51,8 +51,15 @@ struct Mesh3D {
 App gApp;
 Mesh3D gMesh1;
 Mesh3D gMesh2;
-Mesh3D gMeshLight;
-glm::vec3 lightPos(0.0f, 2.0f, -4.0f);
+Mesh3D gMeshLight1;
+Mesh3D gMeshLight2;
+Mesh3D gMeshLight3;
+Mesh3D gMeshLight4;
+glm::vec3 lightPos(0.0f, 3.0f, -6.0f);
+glm::vec3 pointLightPositions[] = {glm::vec3(0.7f, 0.2f, 2.0f), glm::vec3(2.3f, -3.3f, -4.0f),
+                                   glm::vec3(-4.0f, 2.0f, -12.0f), glm::vec3(0.0f, 0.0f, -3.0f)};
+
+size_t pointLightsSize = sizeof(pointLightPositions) / sizeof(pointLightPositions[0]);
 
 // #define GLCheck(x)    \
 //   GLClearAllErrors(); \
@@ -207,21 +214,43 @@ void drawMesh(Mesh3D *mesh) {
 
   sh.setVec3("viewPos", gApp.mCamera.GetEyePosition());
 
-  sh.setVec3("light.position", lightPos);
-  sh.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-  sh.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-  sh.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+  sh.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+  sh.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.2f);
+  sh.setVec3("dirLight.diffuse", 0.5f, 0.5f, 0.5f);
+  sh.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f);
 
+  for (unsigned long i = 0; i < pointLightsSize; i++) {
+    std::string address = "pointLights[" + std::to_string(i) + "]";
+
+    sh.setVec3(address + ".position", pointLightPositions[i]);
+    sh.setVec3(address + ".ambient", 0.2f, 0.2f, 0.2f);
+    sh.setVec3(address + ".diffuse", 0.5f, 0.5f, 0.5f);
+    sh.setVec3(address + ".specular", 1.0f, 1.0f, 1.0f);
+    sh.setFloat(address + ".constant", 1.0f);
+    sh.setFloat(address + ".linear", 0.09f);
+    sh.setFloat(address + ".quadratic", 0.032f);
+  }
+
+  sh.setVec3("spotlight.position", gApp.mCamera.GetEyePosition());
+  sh.setVec3("spotlight.direction", gApp.mCamera.GetViewDirection());
+
+  sh.setVec3("spotlight.ambient", 0.2f, 0.2f, 0.2f);
+  sh.setVec3("spotlight.diffuse", 0.5f, 0.5f, 0.5f);
+  sh.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
+  sh.setFloat("spotlight.cutOff", glm::cos(glm::radians(12.5f)));
+  sh.setFloat("spotlight.outerCutOff", glm::cos(glm::radians(17.5f)));
+
+  sh.setInt("material.diffuse", 0);
   sh.setInt("material.specular", 1);
   sh.setFloat("material.shininess", 8.0f);
-  
+
   // Diffuse map (normal texture)
   glad_glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, mesh->mTexture);
   // Specular map (b/w texture)
   glad_glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, mesh->mSpecularMap);
-  
+
   glBindVertexArray(mesh->mVertexArrayObject);
   glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 }
@@ -310,19 +339,19 @@ void input() {
   // std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
   const Uint8 *state = SDL_GetKeyboardState(NULL);
   float speed = 0.05f;
-  if (state[SDL_SCANCODE_UP]) {
+  if (state[SDL_SCANCODE_UP] || state[SDL_SCANCODE_W]) {
     gApp.mCamera.MoveForward(speed);
   }
 
-  if (state[SDL_SCANCODE_DOWN]) {
+  if (state[SDL_SCANCODE_DOWN] || state[SDL_SCANCODE_S]) {
     gApp.mCamera.MoveBackward(speed);
     // g_Uoffset -= 0.001f;
     // std::cout << "g_Uoffset: " << g_Uoffset << std::endl;
   }
-  if (state[SDL_SCANCODE_LEFT]) {
+  if (state[SDL_SCANCODE_LEFT] || state[SDL_SCANCODE_A]) {
     gApp.mCamera.MoveLeft(speed);
   }
-  if (state[SDL_SCANCODE_RIGHT]) {
+  if (state[SDL_SCANCODE_RIGHT] || state[SDL_SCANCODE_D]) {
     gApp.mCamera.MoveRight(speed);
   }
   if (state[SDL_SCANCODE_SPACE]) {
@@ -355,7 +384,11 @@ void mainLoop() {
     meshRotate(&gMesh1, rotate, glm::vec3(1.0f, 0.5f, 0.0f));
     meshRotate(&gMesh2, -rotate, glm::vec3(0.5f, 1.0f, 0.0f));
 
-    drawMesh(&gMeshLight);
+    drawMesh(&gMeshLight1);
+    drawMesh(&gMeshLight2);
+    drawMesh(&gMeshLight3);
+    drawMesh(&gMeshLight4);
+
     drawMesh(&gMesh1);
     drawMesh(&gMesh2);
 
@@ -367,7 +400,10 @@ void cleanUp() {
   gApp.mGraphicsApplicationWindow = nullptr;
   meshDelete(&gMesh1);
   meshDelete(&gMesh2);
-  meshDelete(&gMeshLight);
+  meshDelete(&gMeshLight1);
+  meshDelete(&gMeshLight2);
+  meshDelete(&gMeshLight3);
+  meshDelete(&gMeshLight4);
   delete gApp.mObjectShader;
   delete gApp.mLightShader;
   gApp.mObjectShader = nullptr;
@@ -387,12 +423,23 @@ int main() {
 
   meshCreate(&gMesh1);
   meshCreate(&gMesh2);
-  meshCreate(&gMeshLight);
 
-  meshTranslate(&gMeshLight, lightPos.x, lightPos.y, lightPos.z);
-  meshScale(&gMeshLight, 0.2f, 0.2f,
-            0.2f); // a small marker cube
+  // a small marker cube
+  meshCreate(&gMeshLight1);
+  meshTranslate(&gMeshLight1, pointLightPositions[0].x, pointLightPositions[0].y, pointLightPositions[0].z);
+  meshScale(&gMeshLight1, 0.2f, 0.2f, 0.2f);
 
+  meshCreate(&gMeshLight2);
+  meshTranslate(&gMeshLight2, pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
+  meshScale(&gMeshLight2, 0.2f, 0.2f, 0.2f);
+
+  meshCreate(&gMeshLight3);
+  meshTranslate(&gMeshLight3, pointLightPositions[2].x, pointLightPositions[2].y, pointLightPositions[2].z);
+  meshScale(&gMeshLight3, 0.2f, 0.2f, 0.2f);
+
+  meshCreate(&gMeshLight4);
+  meshTranslate(&gMeshLight4, pointLightPositions[3].x, pointLightPositions[3].y, pointLightPositions[3].z);
+  meshScale(&gMeshLight4, 0.2f, 0.2f, 0.2f);
   // Order of transformations matter,
   // try changing for different effects
   // keep input matrix as identity
@@ -404,7 +451,10 @@ int main() {
   createGraphicsPipeline();
 
   // For each our meshes set them to a pipeline
-  meshSetPipeline(&gMeshLight, gApp.mLightShader);
+  meshSetPipeline(&gMeshLight1, gApp.mLightShader);
+  meshSetPipeline(&gMeshLight2, gApp.mLightShader);
+  meshSetPipeline(&gMeshLight3, gApp.mLightShader);
+  meshSetPipeline(&gMeshLight4, gApp.mLightShader);
   meshSetPipeline(&gMesh1, gApp.mObjectShader);
   meshSetPipeline(&gMesh2, gApp.mObjectShader);
   mainLoop();

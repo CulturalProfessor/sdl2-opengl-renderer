@@ -21,6 +21,8 @@ Camera::Camera() {
 }
 glm::vec3 Camera::GetEyePosition() const { return mEye; }
 
+glm::vec3 Camera::GetViewDirection() const { return mViewDirection; }
+
 glm::mat4 Camera::GetViewMatrix() const { return glm::lookAt(mEye, mEye + mViewDirection, mUpVector); }
 
 void Camera::SetProjectionMatrix(float fovy, float aspect, float near, float far) {
